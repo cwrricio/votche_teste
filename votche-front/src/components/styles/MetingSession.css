@@ -1,0 +1,45 @@
+/* Adicione ao final do arquivo */
+
+/* Estilos para o relatório completo */
+.meeting-report-section {
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+}
+
+.report-container {
+  background-color: #2a2a2a;
+  border-radius: 8px;
+  padding: 1.5rem;
+}
+
+.report-header {
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.report-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+}
+
+.report-table th, 
+.report-table td {
+  padding: 0.8rem;
+  text-align: left;
+  border-bottom: 1px solid #444;
+}
+
+.report-table th {
+  font-weight: 500;
+  color: #ccc;
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+.report-table tr:last-child td {
+  border-bottom: none;
+}
+
+.report-table tr:hover td {
+  background-color: rgba(255, 255, 255, 0.05);
+}

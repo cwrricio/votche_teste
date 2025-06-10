@@ -1,0 +1,372 @@
+/* Estilo para os formulários e sessão de votação */
+
+.voting-form-container {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 2rem;
+  background-color: #2a2a2a;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.voting-form-container h2 {
+  margin-bottom: 1.5rem;
+  color: #3a9b5d;
+  text-align: center;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: #ccc;
+  text-align: left;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 0.8rem;
+  border: 1px solid #444;
+  border-radius: 4px;
+  background-color: #333;
+  color: #fff;
+  font-size: 1rem;
+}
+
+.option-input {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.remove-option {
+  background-color: #d32f2f;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  width: 30px;
+  cursor: pointer;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.add-option-btn {
+  background-color: transparent;
+  color: #3a9b5d;
+  border: 1px dashed #3a9b5d;
+  padding: 0.5rem;
+  width: 100%;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-top: 0.5rem;
+  transition: background-color 0.3s;
+}
+
+.add-option-btn:hover {
+  background-color: rgba(58, 155, 93, 0.1);
+}
+
+.submit-btn {
+  background-color: #3a9b5d;
+  color: white;
+  border: none;
+  padding: 0.8rem 1.5rem;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  width: 100%;
+  transition: background-color 0.3s;
+}
+
+.submit-btn:hover:not(:disabled) {
+  background-color: #2e8b57;
+}
+
+.submit-btn:disabled {
+  background-color: #555;
+  cursor: not-allowed;
+}
+
+.error-message {
+  color: #ff6b6b;
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+  background-color: rgba(255, 107, 107, 0.1);
+  border-radius: 4px;
+  text-align: center;
+}
+
+.success-message {
+  color: #3a9b5d;
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+  background-color: rgba(58, 155, 93, 0.1);
+  border-radius: 4px;
+  text-align: center;
+}
+
+/* Estilos para sessão de votação */
+.voting-session {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 2rem;
+  background-color: #2a2a2a;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.voting-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.back-button {
+  background-color: transparent;
+  color: #ccc;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+}
+
+.voting-timer {
+  font-size: 0.9rem;
+  color: #ff6b6b;
+  font-weight: 500;
+}
+
+.voting-options {
+  margin-top: 2rem;
+}
+
+.option-container {
+  margin-bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.option-button {
+  background-color: #333;
+  color: white;
+  border: 1px solid #444;
+  padding: 1rem;
+  width: 100%;
+  border-radius: 4px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s;
+  text-align: center;
+}
+
+.option-button:hover:not(:disabled) {
+  background-color: #3a9b5d;
+  border-color: #3a9b5d;
+}
+
+.option-button.voted {
+  cursor: default;
+}
+
+.option-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.vote-count {
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  color: #aaa;
+}
+
+.voting-results {
+  margin-top: 2rem;
+  text-align: center;
+}
+
+.voting-results h3 {
+  color: #ff6b6b;
+}
+
+.admin-info {
+  margin-top: 2rem;
+  padding: 1rem;
+  background-color: rgba(58, 155, 93, 0.1);
+  border-radius: 4px;
+  text-align: center;
+}
+
+.admin-info p {
+  margin: 0.5rem 0;
+}
+
+.loading {
+  text-align: center;
+  padding: 2rem;
+  color: #ccc;
+}
+
+.cancel-btn {
+  background-color: transparent;
+  color: #ccc;
+  border: 1px solid #444;
+  padding: 0.8rem 1.5rem;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  width: 100%;
+  margin-top: 1rem;
+  transition: background-color 0.3s;
+}
+
+.cancel-btn:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: #fff;
+}
+
+.error-state {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 2rem;
+  background-color: #2a2a2a;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+.error-state h3 {
+  color: #ff6b6b;
+  margin-bottom: 1rem;
+}
+
+.error-state button {
+  margin-top: 1.5rem;
+  padding: 0.8rem 1.5rem;
+  background-color: transparent;
+  color: #3a9b5d;
+  border: 1px solid #3a9b5d;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.error-state button:hover {
+  background-color: rgba(58, 155, 93, 0.1);
+}
+
+/* Estilo para o botão de atualizar na lista de reuniões */
+.refresh-btn {
+  background-color: transparent;
+  color: #ccc;
+  border: 1px solid #444;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  margin-right: 1rem;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.refresh-btn:hover:not(:disabled) {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: #fff;
+}
+
+.refresh-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+}
+
+.home-container {
+  width: 100%;
+  max-width: 1000px;
+}
+
+.login-message {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  color: #aaa;
+}
+
+/* Estilos para o PIN */
+input.valid-pin {
+  border-color: #3a9b5d;
+  background-color: rgba(58, 155, 93, 0.05);
+}
+
+.recent-pins {
+  margin-bottom: 1rem;
+}
+
+.recent-pins p {
+  font-size: 0.9rem;
+  color: #aaa;
+  margin-bottom: 0.5rem;
+}
+
+.recent-pins-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.recent-pin-btn {
+  background-color: transparent;
+  border: 1px solid #444;
+  color: #ccc;
+  padding: 0.4rem 0.8rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+}
+
+.recent-pin-btn:hover {
+  border-color: #3a9b5d;
+  background-color: rgba(58, 155, 93, 0.1);
+  color: #fff;
+}
+
+/* Estilos para a senha */
+input.valid-password {
+  border-color: #3a9b5d;
+  background-color: rgba(58, 155, 93, 0.05);
+}
+
+.meeting-password-info {
+  background-color: rgba(58, 155, 93, 0.1);
+  border-radius: 8px;
+  padding: 12px;
+  margin-top: 15px;
+  border: 1px solid rgba(58, 155, 93, 0.2);
+}
+
+.meeting-password-info p {
+  margin: 0;
+  color: #3a9b5d;
+}
+
+.meeting-password-info strong {
+  font-family: monospace;
+  letter-spacing: 1px;
+  background-color: rgba(0, 0, 0, 0.2);
+  padding: 2px 6px;
+  border-radius: 4px;
+}

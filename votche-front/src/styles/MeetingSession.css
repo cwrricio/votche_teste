@@ -1,0 +1,274 @@
+/* Estilos para a sessão de reunião */
+
+.meeting-session {
+  max-width: 800px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.meeting-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.end-meeting-btn {
+  background-color: #ea4335;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.3s;
+}
+
+.end-meeting-btn:hover {
+  background-color: #d33426;
+}
+
+.meeting-info {
+  background-color: #2a2a2a;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.meeting-info h2 {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  color: #fff;
+}
+
+.meeting-datetime {
+  color: #aaa;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.meeting-description {
+  color: #ddd;
+  margin-bottom: 1rem;
+}
+
+.meeting-pin-info {
+  margin-top: 1rem;
+  padding: 1rem;
+  background-color: rgba(58, 155, 93, 0.1);
+  border-radius: 4px;
+  text-align: center;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.section-header h3 {
+  margin: 0;
+  color: #3a9b5d;
+}
+
+.create-voting-btn {
+  background-color: #3a9b5d;
+  color: white;
+  border: none;
+  padding: 0.4rem 0.8rem;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.create-voting-btn:hover {
+  background-color: #2e8b57;
+}
+
+.create-voting-form {
+  background-color: #2a2a2a;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.create-voting-form h4 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  color: #3a9b5d;
+}
+
+.empty-votings {
+  background-color: #2a2a2a;
+  border-radius: 8px;
+  padding: 2rem;
+  text-align: center;
+}
+
+.empty-votings p {
+  margin-bottom: 1rem;
+  color: #aaa;
+}
+
+.votings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.voting-card {
+  background-color: #2a2a2a;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.voting-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.voting-card-header:hover {
+  background-color: #333;
+}
+
+.voting-card-header h4 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.voting-status {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.expand-icon {
+  font-size: 0.8rem;
+  color: #aaa;
+}
+
+.voting-card-content {
+  padding: 1.5rem;
+  border-top: 1px solid #333;
+}
+
+.voted-badge {
+  display: inline-block;
+  background-color: rgba(58, 155, 93, 0.2);
+  color: #3a9b5d;
+  padding: 0.3rem 0.8rem;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.voting-options {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.voting-option {
+  margin-bottom: 0.5rem;
+}
+
+.option-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.option-text {
+  font-weight: 500;
+}
+
+.vote-count {
+  font-size: 0.9rem;
+  color: #aaa;
+}
+
+.progress-bar-container {
+  width: 100%;
+  height: 8px;
+  background-color: #333;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.progress-bar {
+  height: 100%;
+  background-color: #3a9b5d;
+  min-width: 2%;
+}
+
+.vote-button {
+  background-color: transparent;
+  color: #3a9b5d;
+  border: 1px solid #3a9b5d;
+  padding: 0.3rem 0.8rem;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.vote-button:hover {
+  background-color: rgba(58, 155, 93, 0.1);
+}
+
+.end-voting-btn {
+  background-color: #ea4335;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  margin-top: 1rem;
+  transition: background-color 0.3s;
+}
+
+.end-voting-btn:hover {
+  background-color: #d33426;
+}
+
+/* Alguns ajustes para o formulário dentro da reunião */
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-row {
+  display: flex;
+  gap: 1rem;
+}
+
+.half {
+  flex: 1;
+}
+
+.form-textarea {
+  width: 100%;
+  padding: 0.8rem;
+  border: 1px solid #444;
+  border-radius: 4px;
+  background-color: #333;
+  color: #fff;
+  font-size: 1rem;
+  font-family: inherit;
+  resize: vertical;
+}
+
+@media (max-width: 768px) {
+  .form-row {
+    flex-direction: column;
+    gap: 0;
+  }
+}

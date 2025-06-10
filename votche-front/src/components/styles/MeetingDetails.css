@@ -1,0 +1,102 @@
+.meeting-details {
+  background-color: #1e1e1e;
+  border-radius: 8px;
+  padding: 1.5rem;
+  max-width: 600px;
+  margin: 0 auto;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.meeting-details h2 {
+  margin-top: 0;
+  color: #fff;
+  border-bottom: 1px solid #333;
+  padding-bottom: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.meeting-description {
+  margin: 1rem 0;
+  color: #ddd;
+}
+
+.meeting-schedule {
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  padding: 1rem;
+  margin: 1rem 0;
+}
+
+.meeting-schedule h3 {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  font-size: 1rem;
+  color: #eee;
+}
+
+.meeting-schedule p {
+  margin: 0.5rem 0;
+  color: #ccc;
+}
+
+.meeting-status-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 16px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  margin-bottom: 1rem;
+}
+
+.meeting-status-badge.status-active {
+  background-color: rgba(58, 155, 93, 0.2);
+  color: #5cd68d;
+  border: 1px solid rgba(58, 155, 93, 0.4);
+}
+
+.meeting-status-badge.status-scheduled {
+  background-color: rgba(100, 181, 246, 0.2);
+  color: #8dcaff;
+  border: 1px solid rgba(100, 181, 246, 0.4);
+}
+
+.meeting-status-badge.status-ended {
+  background-color: rgba(158, 158, 158, 0.2);
+  color: #bdbdbd;
+  border: 1px solid rgba(158, 158, 158, 0.4);
+}
+
+.meeting-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 1.5rem;
+}
+
+.btn-primary {
+  background-color: #3a9b5d;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btn-secondary {
+  background-color: #444;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btn-danger {
+  background-color: #d32f2f;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
