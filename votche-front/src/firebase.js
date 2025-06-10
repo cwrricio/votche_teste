@@ -260,53 +260,65 @@ const joinMeetingByPin = async (pin, userId) => {
 // Função para entrar em uma reunião por senha
 const joinMeetingByPassword = async (password, userId) => {
   try {
-    // Buscar dados pela senha
-    const passwordRef = ref(database, `passwords/${password}`);
-    const passwordSnapshot = await get(passwordRef);
+    // Primeiro, vamos garantir que a senha não seja undefined ou vazia
+    if (!password || password.trim() === "") {
+      throw new Error("Senha não fornecida");
+    }
 
-    if (!passwordSnapshot.exists()) {
+    // Recuperar todas as reuniões ativas
+    const meetingsRef = ref(database, "meetings");
+    const snapshot = await get(meetingsRef);
+
+    if (!snapshot.exists()) {
+      throw new Error("Nenhuma reunião encontrada");
+    }
+
+    let found = false;
+    let meetingData = null;
+
+    // Comparar a senha usando trim() para remover possíveis espaços extras
+    snapshot.forEach((childSnapshot) => {
+      const meeting = childSnapshot.val();
+      // Verificar se a reunião existe e está ativa
+      if (
+        meeting &&
+        meeting.active &&
+        meeting.password &&
+        meeting.password.trim() === password.trim()
+      ) {
+        found = true;
+        meetingData = meeting;
+        return true; // Interrompe o forEach
+      }
+    });
+
+    if (!found) {
+      console.log("Senha não encontrada:", password);
+      console.log(
+        "Senhas disponíveis:",
+        Array.from(snapshot.val() || [], (m) => m?.password).filter(Boolean)
+      );
       throw new Error("Senha inválida");
     }
 
-    const passwordData = passwordSnapshot.val();
-
-    // Verificar se é do tipo reunião
-    if (passwordData.type !== "meeting") {
-      throw new Error("Esta senha não corresponde a uma reunião");
-    }
-
-    const meetingId = passwordData.id;
-
-    // Verificar se a reunião existe
-    const meetingRef = ref(database, `meetings/${meetingId}`);
-    const meetingSnapshot = await get(meetingRef);
-
-    if (!meetingSnapshot.exists()) {
-      throw new Error("Reunião não encontrada");
-    }
-
-    // Verificar se a reunião está ativa
-    const meetingData = meetingSnapshot.val();
-    if (!meetingData.active) {
-      throw new Error("Esta reunião foi encerrada");
-    }
-
-    // Adicionar usuário como participante
-    await set(
-      ref(database, `meetings/${meetingId}/participants/${userId}`),
-      true
+    // Verificar se o usuário já está na lista de participantes
+    const participantsRef = ref(
+      database,
+      `meetings/${meetingData.id}/participants`
     );
+    const participantsSnapshot = await get(participantsRef);
+    const participants = participantsSnapshot.val() || {};
 
-    // Registrar participação do usuário
-    await set(
-      ref(database, `users/${userId}/participatingIn/${meetingId}`),
-      true
-    );
+    // Se o usuário não estiver na lista de participantes, adicione-o
+    if (!participants[userId]) {
+      await update(ref(database, `meetings/${meetingData.id}/participants`), {
+        [userId]: {
+          joinedAt: new Date().toISOString(),
+        },
+      });
+    }
 
-    return {
-      id: meetingId,
-      ...meetingData,
-    };
+    return meetingData;
   } catch (error) {
     console.error("Erro ao entrar na reunião:", error);
     throw error;
