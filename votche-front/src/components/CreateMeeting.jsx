@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { v4 as uuidv4 } from "uuid";
-import { createNewMeeting } from "../firebase";
+import { createNewMeeting, generateMeetingPassword } from "../firebase";
 import "../styles/CreateMeeting.css";
 
 function CreateMeeting({ user, onComplete, onCancel }) {
@@ -82,6 +82,9 @@ function CreateMeeting({ user, onComplete, onCancel }) {
     setIsLoading(true);
 
     try {
+      // Gerar senha para a reunião
+      const password = generateMeetingPassword();
+
       // Criar dados da reunião
       const meetingData = {
         id: uuidv4(),
@@ -95,6 +98,7 @@ function CreateMeeting({ user, onComplete, onCancel }) {
         hasEndTime: formData.hasEndTime,
         endDate: formData.hasEndTime ? formData.endDate : null,
         endTime: formData.hasEndTime ? formData.endTime : null,
+        password: password, // Adicionar senha gerada
       };
 
       // Salvar no Firebase
