@@ -1,6 +1,7 @@
-import { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
+import { FaSignInAlt, FaTimes, FaKey } from "react-icons/fa";
 import { joinMeetingByPassword } from "../firebase";
-
+import "../styles/EnterMeeting.css";
 
 function EnterMeeting({ user, onComplete, onCancel, activeMeeting }) {
   const [password, setPassword] = useState("");
@@ -11,7 +12,7 @@ function EnterMeeting({ user, onComplete, onCancel, activeMeeting }) {
   // Preencher automaticamente o título se for chamado de uma reunião específica
   const meetingInfo = activeMeeting?.meeting
     ? `Para entrar em "${activeMeeting.meeting.name}"`
-    : "Entrar em uma Reunião";
+    : "Digite a senha de acesso abaixo";
 
   useEffect(() => {
     // Focar no input quando o componente montar
@@ -60,47 +61,54 @@ function EnterMeeting({ user, onComplete, onCancel, activeMeeting }) {
 
   // Função que verifica se a entrada é válida
   const handlePasswordChange = (e) => {
-    const value = e.target.value.slice(0, 6);
+    const value = e.target.value.slice(0, 6).toUpperCase();
     setPassword(value);
   };
 
   return (
-    <div className="voting-form-container">
-      <h2>{meetingInfo}</h2>
+    <div className="enter-meeting-container">
+      <h2>Entrar em uma Reunião</h2>
+      <p className="meeting-context">{meetingInfo}</p>
 
       {error && <div className="error-message">{error}</div>}
 
-      <form onSubmit={handleSubmit}>
+      <form className="enter-form" onSubmit={handleSubmit}>
         <div className="form-group">
-          <label htmlFor="password">
-            Digite a senha da reunião (6 caracteres)
-          </label>
-          <input
-            ref={inputRef}
-            type="text"
-            id="password"
-            value={password}
-            onChange={handlePasswordChange}
-            placeholder="Digite a senha de 6 caracteres"
-            maxLength="6"
-            autoComplete="off"
-            className={password.length === 6 ? "valid-password" : ""}
-            required
-          />
+          <label htmlFor="password">Senha da Reunião</label>
+          <div className="password-input-container">
+            <FaKey className="key-icon" />
+            <input
+              ref={inputRef}
+              type="text"
+              id="password"
+              className="password-input"
+              value={password}
+              onChange={handlePasswordChange}
+              placeholder="ABC123"
+              maxLength={6}
+              autoComplete="off"
+              required
+            />
+          </div>
         </div>
 
-        <button
-          type="submit"
-          className="submit-btn"
-          disabled={isLoading || password.length !== 6}
-        >
-          {isLoading ? "Verificando..." : "Entrar na Reunião"}
-        </button>
+        <div className="form-buttons">
+          <button
+            type="submit"
+            className="submit-btn"
+            disabled={isLoading || password.length !== 6}
+          >
+            <FaSignInAlt className="button-icon" />
+            {isLoading ? "Verificando..." : "Entrar na Reunião"}
+          </button>
 
-        <button type="button" className="cancel-btn" onClick={onCancel}>
-          Cancelar
-        </button>
+          <button type="button" className="cancel-btn" onClick={onCancel}>
+            <FaTimes className="button-icon" />
+            Cancelar
+          </button>
+        </div>
       </form>
+
     </div>
   );
 }

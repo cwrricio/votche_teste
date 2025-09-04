@@ -1,17 +1,29 @@
 import React, { useState, useEffect } from "react";
 import {
+  FaArchive,
+  FaTrash,
+  FaUndo,
+  FaCalendarAlt,
+  FaSyncAlt,
+  FaClock,
+} from "react-icons/fa";
+import {
   getUserArchivedMeetings,
   unarchiveMeeting,
   deleteMeeting,
 } from "../firebase";
-import { formatDate, formatISODate } from "../utils/dateHelpers";
+import { formatDate } from "../utils/dateHelpers";
 import "../styles/ArchivedMeetings.css";
+import ConfirmModal from "./ConfirmModal";
 
 function ArchivedMeetings({ user, onBack, onViewMeeting }) {
   const [archivedMeetings, setArchivedMeetings] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [actionInProgress, setActionInProgress] = useState(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmTarget, setConfirmTarget] = useState(null);
+  const [confirmLoading, setConfirmLoading] = useState(false);
 
   useEffect(() => {
     loadArchivedMeetings();
@@ -51,31 +63,41 @@ function ArchivedMeetings({ user, onBack, onViewMeeting }) {
     }
   };
 
-  const handleDelete = async (meeting) => {
+  // Abrir modal de confirmação antes de deletar
+  const handleDelete = (meeting) => {
     if (!user) return;
+    setConfirmTarget(meeting);
+    setConfirmOpen(true);
+  };
 
-    if (
-      !window.confirm(
-        "Tem certeza que deseja excluir permanentemente esta reunião? Esta ação não pode ser desfeita."
-      )
-    ) {
+  const confirmDelete = async () => {
+    if (!confirmTarget || !user) {
+      setConfirmOpen(false);
       return;
     }
 
-    setActionInProgress(meeting.id);
+    setConfirmLoading(true);
+    setActionInProgress(confirmTarget.id);
 
     try {
-      await deleteMeeting(meeting.id, user.uid);
-      // Remover da lista local
-      setArchivedMeetings((prev) => prev.filter((m) => m.id !== meeting.id));
-      // Remover da lista principal de reuniões do usuário (opcional)
-      // await remove(ref(database, `users/${userId}/meetings/${meetingId}`));
+      await deleteMeeting(confirmTarget.id, user.uid);
+      setArchivedMeetings((prev) =>
+        prev.filter((m) => m.id !== confirmTarget.id)
+      );
+      setConfirmOpen(false);
+      setConfirmTarget(null);
     } catch (error) {
       setError("Erro ao excluir a reunião");
       console.error(error);
     } finally {
+      setConfirmLoading(false);
       setActionInProgress(null);
     }
+  };
+
+  const cancelDelete = () => {
+    setConfirmOpen(false);
+    setConfirmTarget(null);
   };
 
   // Verificar status da reunião
@@ -85,7 +107,7 @@ function ArchivedMeetings({ user, onBack, onViewMeeting }) {
     }
 
     const now = new Date();
-    const meetingDate = new Date(meeting.date + "T" + meeting.time);
+    const meetingDate = new Date(meeting.startDate + "T" + meeting.startTime);
 
     if (meetingDate > now) {
       return { text: "Agendada", class: "status-scheduled" };
@@ -94,15 +116,31 @@ function ArchivedMeetings({ user, onBack, onViewMeeting }) {
     }
   };
 
+  // Formatar data para exibição legível
+  const formatDisplayDate = (dateStr, timeStr) => {
+    try {
+      const date = new Date(`${dateStr}T${timeStr}`);
+      return date.toLocaleDateString("pt-BR", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch (e) {
+      return `${dateStr} ${timeStr}`;
+    }
+  };
+
   return (
     <div className="archived-meetings-container">
       <div className="archived-header">
         <button className="back-button" onClick={onBack}>
-          ← Voltar
+          <FaUndo /> Voltar
         </button>
         <h2>Reuniões Arquivadas</h2>
         <button className="refresh-button" onClick={loadArchivedMeetings}>
-          Atualizar
+          <FaSyncAlt /> Atualizar
         </button>
       </div>
 
@@ -122,14 +160,22 @@ function ArchivedMeetings({ user, onBack, onViewMeeting }) {
 
               return (
                 <div className="archived-meeting-card" key={meeting.id}>
-                  <div
-                    className="archived-meeting-info"
-                    onClick={() => onViewMeeting(meeting)}
-                  >
+                  <div className="archived-meeting-info">
                     <h3>{meeting.name}</h3>
-                    <p className="meeting-date">
-                      {formatDate(meeting.startDate, meeting.startTime)}
-                    </p>
+
+                    <div className="meeting-meta">
+                      <span className={`meeting-status ${status.class}`}>
+                        <FaClock /> {status.text}
+                      </span>
+                      <span className="meeting-date">
+                        <FaCalendarAlt />
+                        {formatDisplayDate(
+                          meeting.startDate,
+                          meeting.startTime
+                        )}
+                      </span>
+                    </div>
+
                     {meeting.description && (
                       <p className="meeting-description">
                         {meeting.description}
@@ -137,12 +183,14 @@ function ArchivedMeetings({ user, onBack, onViewMeeting }) {
                     )}
                   </div>
 
-                  <div className="archived-actions">
+                  <div className="archived-meeting-actions">
                     <button
                       className="unarchive-btn"
                       onClick={() => handleUnarchive(meeting)}
                       disabled={actionInProgress === meeting.id}
+                      title="Desarquivar reunião"
                     >
+                      <FaUndo />
                       {actionInProgress === meeting.id
                         ? "Processando..."
                         : "Desarquivar"}
@@ -152,7 +200,9 @@ function ArchivedMeetings({ user, onBack, onViewMeeting }) {
                       className="delete-btn"
                       onClick={() => handleDelete(meeting)}
                       disabled={actionInProgress === meeting.id}
+                      title="Excluir permanentemente"
                     >
+                      <FaTrash />
                       {actionInProgress === meeting.id
                         ? "Processando..."
                         : "Excluir"}
@@ -164,6 +214,22 @@ function ArchivedMeetings({ user, onBack, onViewMeeting }) {
           )}
         </div>
       )}
+
+      {/* Modal de confirmação aprimorado */}
+      <ConfirmModal
+        open={confirmOpen}
+        title="Excluir reunião"
+        message={
+          confirmTarget
+            ? `Tem certeza que deseja excluir permanentemente a reunião "${confirmTarget.name}"? Esta ação não pode ser desfeita.`
+            : "Tem certeza que deseja excluir esta reunião?"
+        }
+        confirmLabel="Excluir permanentemente"
+        cancelLabel="Cancelar"
+        loading={confirmLoading}
+        onConfirm={confirmDelete}
+        onCancel={cancelDelete}
+      />
     </div>
   );
 }

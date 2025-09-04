@@ -1,31 +1,47 @@
 import { useState, useEffect, useRef } from "react";
-import ReactDOM from "react-dom/client";
 import { jsPDF } from "jspdf";
+import {
+  Chart as ChartJS,
+  ArcElement,
+  Tooltip,
+  Legend,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+} from "chart.js";
+import { Pie } from "react-chartjs-2";
 import VotingReportPDF from "./VotingReportPDF";
 import "./styles/VotingReport.css";
 
-const VotingReport = ({ meetingId, votings, onClose }) => {
+// Registrar componentes necessários do Chart.js
+ChartJS.register(
+  ArcElement,
+  Tooltip,
+  Legend,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title
+);
+
+const VotingReport = ({
+  meetingId,
+  votings,
+  onClose,
+  focusVotingId = null,
+}) => {
   const [reportData, setReportData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("summary");
   const [expandedVoting, setExpandedVoting] = useState(null);
   const [userProfiles, setUserProfiles] = useState({});
   const [error, setError] = useState(null);
-  const [chartType, setChartType] = useState("pie");
   const [exporting, setExporting] = useState(false);
-  const reportRef = useRef(null);
+  // Removida a opção de alternar entre tipos de gráficos, sempre será pizza
+  // const [chartType, setChartType] = useState("pie");
 
-  const colors = [
-    "rgba(75, 192, 192, 0.7)",
-    "rgba(54, 162, 235, 0.7)",
-    "rgba(153, 102, 255, 0.7)",
-    "rgba(255, 159, 64, 0.7)",
-    "rgba(255, 99, 132, 0.7)",
-    "rgba(255, 205, 86, 0.7)",
-    "rgba(201, 203, 207, 0.7)",
-    "rgba(110, 220, 159, 0.7)",
-  ];
-
+  // Processar os dados do relatório
   useEffect(() => {
     if (!votings || votings.length === 0) {
       setLoading(false);
@@ -34,8 +50,6 @@ const VotingReport = ({ meetingId, votings, onClose }) => {
 
     const processVotings = async () => {
       try {
-        setLoading(true);
-
         // Coletar todos os IDs de usuários que votaram
         const userIds = new Set();
 
@@ -58,22 +72,6 @@ const VotingReport = ({ meetingId, votings, onClose }) => {
           }
         });
 
-        // Adicionar participantes da reunião se estiverem disponíveis no objeto meetingData
-        if (votings.length > 0 && votings[0].meetingParticipants) {
-          Object.keys(votings[0].meetingParticipants).forEach((userId) =>
-            userIds.add(userId)
-          );
-        }
-
-        console.log("IDs de usuários encontrados:", Array.from(userIds));
-
-        // Se ainda não encontramos usuários, adicionar alguns dados de exemplo para debug
-        if (userIds.size === 0 && votings.length > 0) {
-          userIds.add("user-debug-1");
-          userIds.add("user-debug-2");
-          console.log("Adicionados usuários de exemplo para debug");
-        }
-
         // Simular perfis de usuário básicos para cada usuário
         const userProfiles = {};
         Array.from(userIds).forEach((userId) => {
@@ -83,20 +81,15 @@ const VotingReport = ({ meetingId, votings, onClose }) => {
           };
         });
 
-        console.log(
-          "Perfis de usuários processados:",
-          Object.keys(userProfiles).length
-        );
         setUserProfiles(userProfiles);
 
         // Processar dados de votação
         const processedData = votings.map((voting) => {
-          console.log("Processando votação:", voting);
-
           // Extrair opções e votos das votações
           const options = [];
           const optionCounts = {};
           const votersByOption = {};
+          const isAnonymous = voting.anonymous === true; // Verificar se a votação é anônima
 
           // Verificar se temos as opções no formato objeto (como armazenado no Firebase)
           if (
@@ -118,8 +111,8 @@ const VotingReport = ({ meetingId, votings, onClose }) => {
           const votes = voting.votes || {};
           let totalVotes = 0;
 
-          // Se tivermos campo de votos específico
-          if (Object.keys(votes).length > 0) {
+          // Se tivermos campo de votos específico e a votação não for anônima
+          if (Object.keys(votes).length > 0 && !isAnonymous) {
             Object.entries(votes).forEach(([userId, option]) => {
               if (!votersByOption[option]) {
                 votersByOption[option] = [];
@@ -160,7 +153,9 @@ const VotingReport = ({ meetingId, votings, onClose }) => {
           return {
             ...voting,
             options,
+            isAnonymous, // Adicionar flag para controlar exibição de detalhes dos votantes
             processedData: {
+              options,
               optionCounts,
               totalVotes,
               votersByOption,
@@ -182,30 +177,79 @@ const VotingReport = ({ meetingId, votings, onClose }) => {
     processVotings();
   }, [votings]);
 
-  // Formatar data para exibição amigável
-  const formatDate = (timestamp) => {
-    if (!timestamp) return "Data indisponível";
+  // Focar na votação específica se o ID for fornecido
+  useEffect(() => {
+    if (focusVotingId && reportData.length > 0) {
+      const focusedVoting = reportData.find((v) => v.id === focusVotingId);
+      if (focusedVoting) {
+        setActiveTab("details");
+        setExpandedVoting(focusedVoting);
+      }
+    }
+  }, [focusVotingId, reportData]);
 
-    const date = new Date(timestamp);
-    return new Intl.DateTimeFormat("pt-BR", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    }).format(date);
-  };
+  // Renderizar gráfico de pizza (único tipo agora)
+  const renderCharts = (processedData) => {
+    const options = processedData.options || [];
 
-  // Formatar apenas hora e minuto para exibição do horário de voto
-  const formatTime = (timestamp) => {
-    if (!timestamp) return "Horário desconhecido";
+    // Cores para o gráfico
+    const colors = [
+      "#27ae60",
+      "#2980b9",
+      "#e74c3c",
+      "#f39c12",
+      "#9b59b6",
+      "#1abc9c",
+      "#d35400",
+      "#34495e",
+      "#16a085",
+      "#c0392b",
+    ];
 
-    const date = new Date(timestamp);
-    return new Intl.DateTimeFormat("pt-BR", {
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-    }).format(date);
+    // Dados para gráfico
+    const chartData = {
+      labels: options.map((option) => option.label),
+      datasets: [
+        {
+          data: options.map((option) => option.value),
+          backgroundColor: colors.slice(0, options.length),
+          borderWidth: 1,
+          borderColor: "#2a2a2a",
+        },
+      ],
+    };
+
+    // Opções do gráfico de pizza
+    const pieOptions = {
+      responsive: true,
+      plugins: {
+        legend: {
+          position: "bottom",
+          labels: {
+            color: "#ddd",
+            boxWidth: 12,
+            padding: 15,
+          },
+        },
+        tooltip: {
+          callbacks: {
+            label: (context) => {
+              const value = context.raw;
+              const total = context.dataset.data.reduce((a, b) => a + b, 0);
+              const percentage =
+                total > 0 ? Math.round((value / total) * 100) : 0;
+              return `${context.label}: ${value} votos (${percentage}%)`;
+            },
+          },
+        },
+      },
+    };
+
+    return (
+      <div className="chart-container">
+        <Pie data={chartData} options={pieOptions} height={250} />
+      </div>
+    );
   };
 
   // Função para exportar o relatório como PDF
@@ -376,6 +420,19 @@ const VotingReport = ({ meetingId, votings, onClose }) => {
     }
   };
 
+  // Renderizar interface do relatório
+  const renderHeader = () => (
+    <div className="report-header">
+      <div className="title-section">
+        <h2>Relatório de Votações</h2>
+        <p>Visualize os resultados de todas as votações desta reunião</p>
+      </div>
+      <button className="close-report-btn" onClick={onClose}>
+        Fechar
+      </button>
+    </div>
+  );
+
   // Renderizar tabs de navegação
   const renderTabs = () => (
     <div className="report-tabs">
@@ -509,6 +566,7 @@ const VotingReport = ({ meetingId, votings, onClose }) => {
         {reportData.map((voting) => {
           const isExpanded = expandedVoting && expandedVoting.id === voting.id;
           const { processedData } = voting;
+          const isAnonymous = voting.isAnonymous;
 
           return (
             <div
@@ -520,7 +578,9 @@ const VotingReport = ({ meetingId, votings, onClose }) => {
                 onClick={() => setExpandedVoting(isExpanded ? null : voting)}
               >
                 <div className="accordion-title">
-                  <h4>{voting.question || "Pergunta sem título"}</h4>
+                  <h4>
+                    {voting.title || voting.question || "Pergunta sem título"}
+                  </h4>
                   <span
                     className={`status-badge ${
                       voting.active ? "active" : "ended"
@@ -528,6 +588,9 @@ const VotingReport = ({ meetingId, votings, onClose }) => {
                   >
                     {voting.active ? "Ativa" : "Encerrada"}
                   </span>
+                  {isAnonymous && (
+                    <span className="anonymous-badge">Anônima</span>
+                  )}
                 </div>
                 <div className="accordion-summary">
                   <span>{processedData.totalVotes} votos</span>
@@ -540,123 +603,116 @@ const VotingReport = ({ meetingId, votings, onClose }) => {
               {isExpanded && (
                 <div className="accordion-content">
                   <div className="voting-details">
-                    <div className="voting-chart">
-                      {/* Defina chartComponent antes de usá-lo */}
-                      {chartType === "pie" ? (
-                        <div className="pie-chart">
-                          <p>Dados de Votação</p>
-                          {/* Adicione aqui o componente de gráfico real se disponível */}
-                        </div>
-                      ) : (
-                        <div className="bar-chart">
-                          <p>Dados de Votação</p>
-                          {/* Adicione aqui o componente de gráfico real se disponível */}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Tabela de resultados da opção */}
-                    <div className="voting-results">
-                      <table className="voting-results-table">
-                        <thead>
-                          <tr>
-                            <th>Opção</th>
-                            <th>Votos</th>
-                            <th>Percentual</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {processedData.options.map((option) => (
-                            <tr key={option.label}>
-                              <td>{option.label}</td>
-                              <td>{option.value}</td>
-                              <td>
-                                {processedData.totalVotes > 0
-                                  ? `${Math.round(
-                                      (option.value /
-                                        processedData.totalVotes) *
-                                        100
-                                    )}%`
-                                  : "0%"}
-                              </td>
-                            </tr>
-                          ))}
-                          <tr className="total-row">
-                            <td>Total</td>
-                            <td>{processedData.totalVotes}</td>
-                            <td>100%</td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-
-                    {/* Nova seção: Detalhes dos votos individuais */}
-                    <div className="voting-details-voters">
-                      <h4>Detalhes dos Votos</h4>
+                    <div className="voting-results-container">
+                      {/* Renderizar o gráfico de pizza */}
                       {processedData.totalVotes > 0 ? (
-                        <div className="voters-by-option">
-                          {processedData.options.map((option) => {
-                            // Encontrar todos os usuários que votaram nesta opção
-                            const votersForOption = Object.entries(
-                              voting.votes || {}
-                            )
-                              .filter(([_, vote]) => vote === option.label)
-                              .map(([userId]) => userProfiles[userId]);
-
-                            return (
-                              <div key={option.label} className="option-voters">
-                                <h5>
-                                  Opção:{" "}
-                                  <span className="option-label">
-                                    {option.label}
-                                  </span>
-                                  <span className="option-count">
-                                    {votersForOption.length} votos
-                                  </span>
-                                </h5>
-
-                                {votersForOption.length > 0 ? (
-                                  <div className="voters-list">
-                                    {votersForOption.map((voter, index) => (
-                                      <div key={index} className="voter-item">
-                                        <div className="voter-avatar">
-                                          {voter.displayName.charAt(0)}
-                                        </div>
-                                        <div className="voter-info">
-                                          <div className="voter-name">
-                                            {voter.displayName}
-                                          </div>
-                                          <div className="voter-time">
-                                            {voting.voteTimestamps &&
-                                            voting.voteTimestamps[voter.uid]
-                                              ? formatTime(
-                                                  new Date(
-                                                    voting.voteTimestamps[
-                                                      voter.uid
-                                                    ]
-                                                  )
-                                                )
-                                              : "Horário desconhecido"}
-                                          </div>
-                                        </div>
-                                      </div>
-                                    ))}
-                                  </div>
-                                ) : (
-                                  <p className="no-voters">
-                                    Nenhum voto para esta opção
-                                  </p>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
+                        renderCharts(processedData)
                       ) : (
-                        <p className="no-votes-message">
-                          Nenhum voto registrado para esta votação
-                        </p>
+                        <div className="no-data-chart">
+                          <p>Sem votos para exibir no gráfico</p>
+                        </div>
                       )}
+
+                      {/* Tabela de resultados */}
+                      <div className="voting-results-table-container">
+                        <table className="voting-results-table">
+                          <thead>
+                            <tr>
+                              <th>Opção</th>
+                              <th>Votos</th>
+                              <th>Percentual</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {processedData.options.map((option) => (
+                              <tr key={option.label}>
+                                <td>{option.label}</td>
+                                <td>{option.value}</td>
+                                <td>
+                                  {processedData.totalVotes > 0
+                                    ? `${Math.round(
+                                        (option.value /
+                                          processedData.totalVotes) *
+                                          100
+                                      )}%`
+                                    : "0%"}
+                                </td>
+                              </tr>
+                            ))}
+                            <tr className="total-row">
+                              <td>Total</td>
+                              <td>{processedData.totalVotes}</td>
+                              <td>100%</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
+
+                    {/* Exibir lista de votantes somente se não for anônima */}
+                    {!isAnonymous && processedData.totalVotes > 0 && (
+                      <div className="voters-by-option">
+                        <h5>Detalhes dos Votantes</h5>
+                        <div className="options-grid">
+                          {processedData.options
+                            .filter((option) => option.value > 0)
+                            .map((option) => {
+                              const votersForOption =
+                                processedData.votersByOption[option.label] ||
+                                [];
+                              const percentage =
+                                (option.value / processedData.totalVotes) * 100;
+
+                              return (
+                                <div
+                                  key={option.label}
+                                  className="option-voters"
+                                >
+                                  <div className="option-header">
+                                    <div className="option-header-content">
+                                      <span className="option-label">
+                                        {option.label}
+                                      </span>
+                                      <span className="voters-percentage">
+                                        {Math.round(percentage)}%
+                                      </span>
+                                    </div>
+                                    <span className="option-count">
+                                      {option.value} voto(s)
+                                    </span>
+                                  </div>
+
+                                  <div className="voters-list">
+                                    {votersForOption.length > 0 ? (
+                                      votersForOption.map((voter) => (
+                                        <div
+                                          key={voter.id}
+                                          className="voter-item"
+                                        >
+                                          <div className="voter-info">
+                                            <div className="voter-avatar-placeholder">
+                                              {voter.profile.displayName.charAt(
+                                                0
+                                              )}
+                                            </div>
+                                            <span className="voter-name">
+                                              {voter.profile.displayName}
+                                            </span>
+                                          </div>
+                                        </div>
+                                      ))
+                                    ) : (
+                                      <div className="no-voters">
+                                        Sem informações de votantes disponíveis
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -667,151 +723,46 @@ const VotingReport = ({ meetingId, votings, onClose }) => {
     </div>
   );
 
-  // Renderizar análise de participação com detalhes de votos por usuário
-  const renderParticipation = () => {
+  // Interface principal do relatório
+  if (loading) {
     return (
-      <div className="participation-analysis">
-        <h3>Análise de Participação</h3>
-        <p>Detalhes de participação por usuário</p>
+      <div className="voting-report-container">
+        {renderHeader()}
+        <div className="loading-container">Carregando relatório...</div>
+      </div>
+    );
+  }
 
-        <div className="users-participation">
-          {Object.entries(userProfiles).map(([userId, profile]) => {
-            // Contar em quantas votações este usuário participou
-            let votingCount = 0;
-            const userVotings = [];
+  if (error) {
+    return (
+      <div className="voting-report-container">
+        {renderHeader()}
+        <div className="error-container">{error}</div>
+      </div>
+    );
+  }
 
-            reportData.forEach((voting) => {
-              if (voting.votes && voting.votes[userId]) {
-                votingCount++;
-                userVotings.push({
-                  id: voting.id,
-                  question: voting.question || voting.title || "Sem título",
-                  option: voting.votes[userId],
-                  timestamp: voting.voteTimestamps?.[userId] || null,
-                });
-              }
-            });
-
-            const participationRate =
-              reportData.length > 0
-                ? Math.round((votingCount / reportData.length) * 100)
-                : 0;
-
-            return (
-              <div key={userId} className="user-participation-card">
-                <div className="user-header">
-                  <div className="user-avatar-placeholder">
-                    {profile.displayName.charAt(0)}
-                  </div>
-                  <div className="user-details">
-                    <h4>{profile.displayName}</h4>
-                    <div className="participation-stats">
-                      <div className="participation-bar-container">
-                        <div
-                          className="participation-bar"
-                          style={{ width: `${participationRate}%` }}
-                        ></div>
-                      </div>
-                      <span className="participation-rate">
-                        {participationRate}% ({votingCount} de{" "}
-                        {reportData.length})
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {userVotings.length > 0 ? (
-                  <div className="user-votings">
-                    <h5>Votos do Usuário</h5>
-                    <table className="user-votes-table">
-                      <thead>
-                        <tr>
-                          <th>Pergunta</th>
-                          <th>Opção escolhida</th>
-                          <th>Horário do voto</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {userVotings.map((voting) => (
-                          <tr key={voting.id}>
-                            <td>{voting.question}</td>
-                            <td>
-                              <span className="user-vote-option">
-                                {voting.option}
-                              </span>
-                            </td>
-                            <td>
-                              {voting.timestamp
-                                ? formatTime(new Date(voting.timestamp))
-                                : "N/D"}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : (
-                  <p className="no-participation">
-                    Este usuário não participou de nenhuma votação
-                  </p>
-                )}
-              </div>
-            );
-          })}
+  if (reportData.length === 0) {
+    return (
+      <div className="voting-report-container">
+        {renderHeader()}
+        <div className="empty-state">
+          Não há votações disponíveis para gerar relatório
         </div>
       </div>
     );
-  };
-
-  // Renderizar conteúdo principal baseado na tab ativa
-  const renderContent = () => {
-    if (loading) {
-      return (
-        <div className="loading-container">
-          Carregando dados do relatório...
-        </div>
-      );
-    }
-
-    if (error) {
-      return <div className="error-container">{error}</div>;
-    }
-
-    if (reportData.length === 0) {
-      return (
-        <div className="empty-state">
-          Não há dados de votação para exibir no relatório
-        </div>
-      );
-    }
-
-    switch (activeTab) {
-      case "details":
-        return renderDetails();
-      case "participation":
-        return renderParticipation();
-      case "summary":
-      default:
-        return renderSummary();
-    }
-  };
+  }
 
   return (
-    <div className="voting-report-overlay">
-      <div ref={reportRef} className="voting-report-container">
-        <div className="report-header">
-          <div className="title-section">
-            <h2>Relatório Completo de Votações</h2>
-            <p>Análise detalhada de todas as votações desta reunião</p>
-          </div>
-          <button className="close-report-btn" onClick={onClose}>
-            Fechar
-          </button>
-        </div>
-
-        {renderTabs()}
-
-        <div className="report-content">{renderContent()}</div>
+    <div className="voting-report-container">
+      {renderHeader()}
+      {renderTabs()}
+      <div className="report-content">
+        {activeTab === "summary" && renderSummary()}
+        {activeTab === "details" && renderDetails()}
+        {activeTab === "participation" && (
+          <div>Conteúdo de participação detalhada...</div>
+        )}
       </div>
     </div>
   );

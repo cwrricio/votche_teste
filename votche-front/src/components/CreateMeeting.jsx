@@ -1,19 +1,24 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { createNewMeeting, generateMeetingPassword } from "../firebase";
 import "../styles/CreateMeeting.css";
+import { FaUserSecret, FaClock } from "react-icons/fa";
 
 function CreateMeeting({ user, onComplete, onCancel }) {
   // Estado base para o formulário
   const [formData, setFormData] = useState({
     name: "",
     description: "",
+    startNow: true, // Novo campo: iniciar imediatamente
     startDate: getTodayDateString(),
     startTime: getCurrentTimeString(),
     hasEndTime: false,
     endDate: getTodayDateString(),
     endTime: getTimeOneHourLater(),
+    // Configuração simplificada
+    isAnonymous: false,
   });
+
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -40,21 +45,40 @@ function CreateMeeting({ user, onComplete, onCancel }) {
   // Handler para mudanças no formulário
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value,
-    }));
+
+    if (name === "startNow" && checked) {
+      // Se marcar início imediato, atualizar data e hora para o momento atual
+      setFormData((prev) => ({
+        ...prev,
+        startNow: checked,
+        startDate: getTodayDateString(),
+        startTime: getCurrentTimeString(),
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: type === "checkbox" ? checked : value,
+      }));
+    }
   };
 
-  // Validação de datas/horas
+  // Validação de datas/horas apenas se não for início imediato
   const validateDateTime = () => {
+    // Se for início imediato, não precisa validar
+    if (formData.startNow) {
+      return null;
+    }
+
     const now = new Date();
     const startDateTime = new Date(
       `${formData.startDate}T${formData.startTime}`
     );
 
-    if (startDateTime < now) {
-      return "A data e hora de início devem ser futuras";
+    // Tolerância de 1 minuto para permitir o horário atual
+    const nowWithBuffer = new Date(now.getTime() - 60000); // Subtrai 1 minuto
+
+    if (startDateTime < nowWithBuffer) {
+      return "A data e hora de início devem ser atuais ou futuras";
     }
 
     if (formData.hasEndTime) {
@@ -71,11 +95,13 @@ function CreateMeeting({ user, onComplete, onCancel }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validar datas/horas
-    const dateTimeError = validateDateTime();
-    if (dateTimeError) {
-      setError(dateTimeError);
-      return;
+    // Se não for início imediato, validar datas/horas
+    if (!formData.startNow) {
+      const dateTimeError = validateDateTime();
+      if (dateTimeError) {
+        setError(dateTimeError);
+        return;
+      }
     }
 
     setError("");
@@ -85,6 +111,14 @@ function CreateMeeting({ user, onComplete, onCancel }) {
       // Gerar senha para a reunião
       const password = generateMeetingPassword();
 
+      // Se for início imediato, usar data e hora atuais
+      const currentDate = formData.startNow
+        ? getTodayDateString()
+        : formData.startDate;
+      const currentTime = formData.startNow
+        ? getCurrentTimeString()
+        : formData.startTime;
+
       // Criar dados da reunião
       const meetingData = {
         id: uuidv4(),
@@ -93,18 +127,21 @@ function CreateMeeting({ user, onComplete, onCancel }) {
         createdBy: user.uid,
         createdAt: new Date().toISOString(),
         active: true,
-        startDate: formData.startDate,
-        startTime: formData.startTime,
+        startDate: currentDate,
+        startTime: currentTime,
         hasEndTime: formData.hasEndTime,
         endDate: formData.hasEndTime ? formData.endDate : null,
         endTime: formData.hasEndTime ? formData.endTime : null,
-        password: password, // Adicionar senha gerada
+        password: password,
+        // Apenas configuração anônima
+        isAnonymous: formData.isAnonymous,
       };
 
       // Salvar no Firebase
       await createNewMeeting(meetingData, user);
       onComplete(meetingData);
     } catch (error) {
+      console.error("Erro ao criar reunião:", error);
       setError(error.message || "Erro ao criar reunião");
     } finally {
       setIsLoading(false);
@@ -113,7 +150,9 @@ function CreateMeeting({ user, onComplete, onCancel }) {
 
   return (
     <div className="create-meeting-container">
-      <h2>Criar Nova Reunião</h2>
+      <div className="create-meeting-header">
+        <h2>Nova Reunião</h2>
+      </div>
 
       {error && <div className="error-message">{error}</div>}
 
@@ -145,32 +184,56 @@ function CreateMeeting({ user, onComplete, onCancel }) {
           </div>
         </div>
 
-        {/* Campos de Agendamento */}
+        {/* Campos de Agendamento - Simplificados */}
         <div className="form-section">
           <h3>Agendamento</h3>
 
-          <div className="form-group date-time-group">
-            <label>Início da Reunião</label>
-            <div className="date-time-inputs">
+          <div className="form-group checkbox-group">
+            <label
+              htmlFor="startNow"
+              className="checkbox-label start-now-option"
+            >
               <input
-                type="date"
-                name="startDate"
-                value={formData.startDate}
+                type="checkbox"
+                id="startNow"
+                name="startNow"
+                checked={formData.startNow}
                 onChange={handleChange}
-                required
               />
-              <input
-                type="time"
-                name="startTime"
-                value={formData.startTime}
-                onChange={handleChange}
-                required
-              />
-            </div>
+              <span className="checkbox-icon">
+                <FaClock />
+              </span>
+              <span className="checkbox-text">Iniciar imediatamente</span>
+            </label>
+            <p className="option-description">
+              A reunião começará assim que for criada
+            </p>
           </div>
 
+          {!formData.startNow && (
+            <div className="form-group date-time-group">
+              <label>Início da Reunião</label>
+              <div className="date-time-inputs">
+                <input
+                  type="date"
+                  name="startDate"
+                  value={formData.startDate}
+                  onChange={handleChange}
+                  required
+                />
+                <input
+                  type="time"
+                  name="startTime"
+                  value={formData.startTime}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+            </div>
+          )}
+
           <div className="form-group checkbox-group">
-            <label htmlFor="hasEndTime">
+            <label htmlFor="hasEndTime" className="checkbox-label">
               <input
                 type="checkbox"
                 id="hasEndTime"
@@ -178,7 +241,7 @@ function CreateMeeting({ user, onComplete, onCancel }) {
                 checked={formData.hasEndTime}
                 onChange={handleChange}
               />
-              Definir hora de término
+              <span className="checkbox-text">Definir hora de término</span>
             </label>
           </div>
 
@@ -203,12 +266,30 @@ function CreateMeeting({ user, onComplete, onCancel }) {
               </div>
             </div>
           )}
+        </div>
 
-          {!formData.hasEndTime && (
-            <p className="info-text">
-              A reunião não terá tempo limite definido.
+        {/* Configuração Anônima - Simplificada */}
+        <div className="form-section">
+          <h3>Configurações</h3>
+
+          <div className="form-group checkbox-group">
+            <label htmlFor="isAnonymous" className="checkbox-label">
+              <input
+                type="checkbox"
+                id="isAnonymous"
+                name="isAnonymous"
+                checked={formData.isAnonymous}
+                onChange={handleChange}
+              />
+              <span className="checkbox-icon">
+                <FaUserSecret />
+              </span>
+              <span className="checkbox-text">Votação anônima</span>
+            </label>
+            <p className="option-description">
+              Os participantes não poderão ver quem votou em cada opção
             </p>
-          )}
+          </div>
         </div>
 
         <div className="form-actions">

@@ -1,0 +1,224 @@
+/* Melhorias na exibição da votação */
+:root {
+  --success-color: #27ae60;
+  --danger-color: #e74c3c;
+  --dark-color: #343a40;
+  --light-color: #f8f9fa;
+  --medium-color: #6c757d;
+  --border-color: #dee2e6;
+}
+
+.page-header {
+  margin-bottom: 2.5rem; /* Espaçamento depois do "você é organizador" */
+}
+
+.voting-container {
+  background-color: white;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--border-color);
+  margin-bottom: 2rem;
+  overflow: hidden;
+}
+
+.voting-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem 1.5rem;
+  background-color: #f8f9fa;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.voting-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #212529;
+  margin: 0;
+}
+
+.voting-status {
+  padding: 0.3rem 0.7rem;
+  border-radius: 50px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.voting-status.active {
+  background-color: rgba(39, 174, 96, 0.1);
+  color: var(--success-color);
+}
+
+.voting-body {
+  padding: 1.5rem;
+}
+
+/* Opções de votação - na vertical */
+.voting-options {
+  display: flex;
+  flex-direction: column; /* Coloca as opções na vertical */
+  gap: 1rem; /* Espaçamento entre as opções */
+  margin-bottom: 1rem;
+}
+
+.vote-option-btn {
+  width: 100%;
+  padding: 1rem 1.5rem;
+  text-align: left;
+  background-color: var(--dark-color);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.vote-option-btn:hover:not(:disabled) {
+  opacity: 0.9;
+  transform: translateY(-2px);
+}
+
+.vote-option-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.vote-option-btn.temp-selected {
+  background-color: #66cd61;
+  color: white;
+  border-left: 4px solid #66cd61;
+}
+
+.vote-option-btn.selected {
+  background-color: var(--success-color);
+  color: white;
+  font-weight: 500;
+}
+
+.confirm-vote-btn {
+  padding: 0.8rem 1rem;
+  background-color: var(--success-color);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  transition: all 0.2s;
+}
+
+.confirm-vote-btn:hover {
+  background-color: #219653;
+  transform: translateY(-2px);
+}
+
+.voting-footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #f8f9fa;
+}
+
+.total-votes {
+  color: var(--medium-color);
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.vote-count-icon {
+  color: var(--success-color);
+}
+
+.action-buttons {
+  display: flex;
+  gap: 0.8rem;
+}
+
+.action-btn {
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: none;
+  color: white;
+}
+
+.btn-success {
+  background-color: var(--success-color);
+}
+
+.btn-success:hover {
+  background-color: #219653;
+}
+
+.btn-danger {
+  background-color: var(--danger-color);
+}
+
+.btn-danger:hover {
+  background-color: #c0392b;
+}
+
+.btn-secondary {
+  background-color: var(--medium-color);
+}
+
+.btn-secondary:hover {
+  background-color: #5a6268;
+}
+
+/* Melhorar título "Votações" */
+.votacoes-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #212529;
+  margin-bottom: 1.5rem;
+  position: relative;
+  display: inline-block;
+}
+
+.votacoes-title::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -8px;
+  width: 100%; /* Estende até o fim da palavra */
+  height: 3px;
+  background-color: var(--success-color);
+  border-radius: 2px;
+}
+
+/* Botão de nova votação */
+.new-vote-btn {
+  background-color: var(--success-color);
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: none;
+  transition: all 0.2s;
+  margin-bottom: 1.5rem;
+}
+
+.new-vote-btn:hover {
+  background-color: #219653;
+  transform: translateY(-2px);
+}

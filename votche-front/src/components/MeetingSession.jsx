@@ -1,14 +1,16 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
+import { QRCodeSVG } from "qrcode.react";
 import {
   listenToMeeting,
   listenToVotingsInMeeting,
   endMeeting,
-  createVotingInMeeting,
   registerVoteInMeeting,
   endVoting,
 } from "../firebase";
+import CreateVotingForm from "./CreateVotingForm";
 import "../styles/MeetingSession.css";
-import VotingReport from "./VotingReport";
+import VotingList from "./VotingList";
+import { FaCopy, FaCheck } from "react-icons/fa";
 
 function MeetingSession({ meetingId, user, onBack }) {
   const [meeting, setMeeting] = useState(null);
@@ -16,7 +18,8 @@ function MeetingSession({ meetingId, user, onBack }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [showCreateVoting, setShowCreateVoting] = useState(false);
-  const [showVotingReport, setShowVotingReport] = useState(false);
+  const [showQRCode, setShowQRCode] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   // Estados para criação de votação
   const [votingTitle, setVotingTitle] = useState("");
@@ -186,6 +189,24 @@ function MeetingSession({ meetingId, user, onBack }) {
     return voting.active && voting.endTime > Date.now();
   };
 
+  // Função para copiar o código da reunião
+  const handleCopyCode = () => {
+    if (!meeting || !meeting.password) return;
+
+    navigator.clipboard
+      .writeText(meeting.password)
+      .then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      })
+      .catch((err) => console.error("Erro ao copiar: ", err));
+  };
+
+  // Adicionar esta nova função dentro do componente MeetingSession
+  const handleUseDefaultOptions = () => {
+    setVotingOptions(["Concordo", "Discordo", "Me abstenho"]);
+  };
+
   if (isLoading) {
     return <div className="loading">Carregando reunião...</div>;
   }
@@ -202,7 +223,7 @@ function MeetingSession({ meetingId, user, onBack }) {
     );
   }
 
-  const isCreator = meeting.createdBy === user.uid;
+  const isOwner = meeting.createdBy === user.uid;
 
   return (
     <div className="meeting-session">
@@ -211,7 +232,7 @@ function MeetingSession({ meetingId, user, onBack }) {
           ← Voltar
         </button>
 
-        {isCreator && meeting.active && (
+        {isOwner && meeting.active && (
           <button className="end-meeting-btn" onClick={handleEndMeeting}>
             Encerrar Reunião
           </button>
@@ -227,230 +248,71 @@ function MeetingSession({ meetingId, user, onBack }) {
           <p className="meeting-description">{meeting.description}</p>
         )}
 
-        {isCreator && (
-          <div className="meeting-password-info">
-            <p>
-              Senha desta reunião: <strong>{meeting.password}</strong>
-            </p>
-            <p>Compartilhe esta senha com os participantes</p>
+        {/* Seção com senha e QR Code sempre visível */}
+        {isOwner && (
+          <div className="meeting-password-container">
+            <div className="password-info-column">
+              <p className="password-label">Senha da reunião:</p>
+              <div className="password-display-row">
+                <strong className="meeting-password">{meeting.password}</strong>
+                <button
+                  className={`copy-button ${copied ? "copied" : ""}`}
+                  onClick={handleCopyCode}
+                  title="Copiar senha"
+                >
+                  {copied ? <FaCheck /> : <FaCopy />}
+                </button>
+              </div>
+              <p className="password-sharing-tip">
+                Compartilhe esta senha com os participantes que você deseja
+                convidar para a reunião.
+              </p>
+            </div>
+
+            <div className="qr-code-container">
+              <QRCodeSVG
+                value={meeting.password}
+                size={180}
+                bgColor={"#ffffff"}
+                fgColor={"#000000"}
+                level={"M"}
+                includeMargin={true}
+              />
+              <p className="qr-code-info">
+                Participantes podem escanear este QR Code para entrar na reunião
+              </p>
+            </div>
           </div>
         )}
       </div>
 
+      {/* Após a div meeting-info */}
+      {isOwner && meeting.active && (
+        <div className="owner-actions-banner">
+          <div className="owner-icon">👑</div>
+          <div className="owner-message">
+            <strong>Você é o organizador desta reunião.</strong>
+            <p>Use o botão "+ Nova Votação" abaixo para iniciar votações.</p>
+          </div>
+        </div>
+      )}
+
       {error && <div className="error-message">{error}</div>}
 
       <div className="meeting-content">
-        <div className="votings-section">
-          <div className="section-header">
-            <h3>Votações</h3>
-            {isCreator && meeting.active && (
-              <button
-                className="create-voting-btn"
-                onClick={() => setShowCreateVoting(!showCreateVoting)}
-              >
-                {showCreateVoting ? "Cancelar" : "+ Nova Votação"}
-              </button>
-            )}
-          </div>
-
-          {showCreateVoting && (
-            <div className="create-voting-form">
-              <h4>Criar Nova Votação</h4>
-              <form onSubmit={handleCreateVoting}>
-                <div className="form-group">
-                  <label htmlFor="votingTitle">Pergunta da Votação</label>
-                  <input
-                    type="text"
-                    id="votingTitle"
-                    value={votingTitle}
-                    onChange={(e) => setVotingTitle(e.target.value)}
-                    placeholder="Ex: Qual o melhor dia para a próxima reunião?"
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Opções de Resposta</label>
-                  {votingOptions.map((option, index) => (
-                    <div key={index} className="option-input">
-                      <input
-                        type="text"
-                        value={option}
-                        onChange={(e) =>
-                          handleOptionChange(index, e.target.value)
-                        }
-                        placeholder={`Opção ${index + 1}`}
-                        required
-                      />
-                      <button
-                        type="button"
-                        className="remove-option"
-                        onClick={() => handleRemoveOption(index)}
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ))}
-                  <button
-                    type="button"
-                    className="add-option-btn"
-                    onClick={handleAddOption}
-                  >
-                    + Adicionar Opção
-                  </button>
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="votingDuration">Duração (minutos)</label>
-                  <input
-                    type="number"
-                    id="votingDuration"
-                    value={votingDuration}
-                    onChange={(e) =>
-                      setVotingDuration(parseInt(e.target.value) || 0)
-                    }
-                    min="1"
-                    required
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  className="submit-btn"
-                  disabled={isCreatingVoting}
-                >
-                  {isCreatingVoting ? "Criando..." : "Criar Votação"}
-                </button>
-              </form>
-            </div>
-          )}
-
-          {votings.length === 0 ? (
-            <div className="empty-votings">
-              <p>Nenhuma votação criada nesta reunião</p>
-              {isCreator && meeting.active && !showCreateVoting && (
-                <button
-                  className="create-voting-btn"
-                  onClick={() => setShowCreateVoting(true)}
-                >
-                  Criar Primeira Votação
-                </button>
-              )}
-            </div>
-          ) : (
-            <div className="votings-list">
-              {votings.map((voting) => (
-                <div key={voting.id} className="voting-card">
-                  <div
-                    className="voting-card-header"
-                    onClick={() =>
-                      setExpandedVotingId(
-                        expandedVotingId === voting.id ? null : voting.id
-                      )
-                    }
-                  >
-                    <h4>{voting.title}</h4>
-                    <div className="voting-status">
-                      {voting.active ? (
-                        voting.endTime > Date.now() ? (
-                          <span className="status-active">Ativa</span>
-                        ) : (
-                          <span className="status-ended">Encerrada</span>
-                        )
-                      ) : (
-                        <span className="status-ended">Encerrada</span>
-                      )}
-                      <span className="expand-icon">
-                        {expandedVotingId === voting.id ? "▼" : "▶"}
-                      </span>
-                    </div>
-                  </div>
-
-                  {expandedVotingId === voting.id && (
-                    <div className="voting-card-content">
-                      {hasVoted(voting) && (
-                        <div className="voted-badge">
-                          Você já votou nesta votação
-                        </div>
-                      )}
-
-                      <div className="voting-options">
-                        {Object.entries(voting.options).map(
-                          ([option, count]) => {
-                            const totalVotes = Object.values(
-                              voting.options
-                            ).reduce((a, b) => a + b, 0);
-                            const percentage =
-                              totalVotes > 0
-                                ? Math.round((count / totalVotes) * 100)
-                                : 0;
-
-                            return (
-                              <div key={option} className="voting-option">
-                                <div className="option-header">
-                                  <span className="option-text">{option}</span>
-                                  <span className="vote-count">
-                                    {count} voto{count !== 1 ? "s" : ""} (
-                                    {percentage}%)
-                                  </span>
-                                </div>
-
-                                <div className="progress-bar-container">
-                                  <div
-                                    className="progress-bar"
-                                    style={{ width: `${percentage}%` }}
-                                  ></div>
-                                </div>
-
-                                {isVotingActive(voting) &&
-                                  !hasVoted(voting) && (
-                                    <button
-                                      className="vote-button"
-                                      onClick={() =>
-                                        handleVote(voting.id, option)
-                                      }
-                                    >
-                                      Votar
-                                    </button>
-                                  )}
-                              </div>
-                            );
-                          }
-                        )}
-                      </div>
-
-                      {isCreator && voting.active && (
-                        <button
-                          className="end-voting-btn"
-                          onClick={() => handleEndVoting(voting.id)}
-                        >
-                          Encerrar Votação
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {votings.length > 0 && (
-          <div className="report-button-container">
-            <button
-              className="view-report-btn"
-              onClick={() => setShowVotingReport(true)}
-            >
-              Ver Relatório Completo
-            </button>
-          </div>
-        )}
-
-        {showVotingReport && (
-          <VotingReport
-            meetingId={meetingId}
+        {/* Componente de votação aprimorado */}
+        {showCreateVoting ? (
+          <CreateVotingForm
+            onSubmit={handleCreateVoting}
+            onCancel={() => setShowCreateVoting(false)}
+          />
+        ) : (
+          <VotingList
             votings={votings}
-            onClose={() => setShowVotingReport(false)}
+            isOwner={isOwner}
+            onVote={handleVote}
+            onEndVoting={handleEndVoting}
+            onCreateVoting={() => setShowCreateVoting(true)}
           />
         )}
       </div>

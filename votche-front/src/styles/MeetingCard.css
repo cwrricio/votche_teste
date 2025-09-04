@@ -9,10 +9,10 @@
   right: 10px;
   background: transparent;
   border: none;
-  color: #aaa;
+  color: var(--icon-secondary);
   cursor: pointer;
-  padding: 5px;
-  border-radius: 4px;
+  padding: 8px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -20,11 +20,26 @@
 }
 
 .archive-btn:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-  color: #fff;
+  background-color: rgba(58, 155, 93, 0.1);
+  color: var(--icon-primary);
 }
 
-.archive-icon {
-  font-size: 18px;
-  display: block;
+.icon-archive {
+  font-size: 16px;
+}
+
+.icon-date,
+.icon-description {
+  margin-right: 6px;
+  font-size: 14px;
+  color: var(--icon-primary);
+  vertical-align: middle;
+}
+
+.meeting-date,
+.meeting-description {
+  display: flex;
+  align-items: center;
+  margin: 8px 0;
+  color: var(--text-medium);
 }

@@ -1,54 +1,53 @@
 import React from "react";
-import { formatDateTime } from "../utils/dateHelpers";
+import { FaCalendarAlt, FaInfoCircle } from "react-icons/fa";
 
 function MeetingCard({ meeting, isOwner, onSelect, onArchive }) {
   // Determinar o status da reunião
   const getStatus = () => {
     if (!meeting.active) {
-      return { text: "Encerrada", class: "ended" };
+      return { text: "Encerra em", class: "status-ended" };
     }
 
     const now = new Date();
     const startDateTime = new Date(`${meeting.startDate}T${meeting.startTime}`);
 
     if (startDateTime > now) {
-      return { text: "Agendada", class: "scheduled" };
+      return { text: "Agendada", class: "status-scheduled" };
     } else {
-      return { text: "Em andamento", class: "active" };
+      return { text: "Em andamento", class: "status-active" };
     }
   };
 
   const status = getStatus();
 
-  // Handler para clique no botão de arquivar
-  const handleArchive = (e) => {
-    e.stopPropagation(); // Impedir propagação para o card
-    onArchive(meeting);
-  };
-
   return (
     <div className="meeting-card" onClick={() => onSelect(meeting)}>
-      {isOwner && (
-        <button
-          className="archive-btn"
-          onClick={handleArchive}
-          title="Arquivar reunião"
-        >
-          <span className="archive-icon">📁</span>
-        </button>
-      )}
-
-      <h3 className="meeting-title">{meeting.name}</h3>
+      <h3 className="meeting-name">{meeting.name}</h3>
 
       <p className="meeting-date">
-        {formatDateTime(meeting.startDate, meeting.startTime)}
+        <FaCalendarAlt /> {`${meeting.startDate} às ${meeting.startTime}`}
       </p>
 
       {meeting.description && (
-        <p className="meeting-description">{meeting.description}</p>
+        <p className="meeting-description">
+          <FaInfoCircle /> {meeting.description}
+        </p>
       )}
 
-      <div className={`meeting-status ${status.class}`}>{status.text}</div>
+      <div className="meeting-footer">
+        <span className={`meeting-status ${status.class}`}>{status.text}</span>
+        {isOwner && (
+          <button
+            className="meeting-action-btn"
+            onClick={(e) => {
+              e.stopPropagation();
+              onArchive(meeting);
+            }}
+          >
+            Arquivar
+          </button>
+        )}
+      </div>
     </div>
   );
 }
