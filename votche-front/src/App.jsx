@@ -31,7 +31,7 @@ import EnterMeeting from "./components/EnterMeeting";
 import MeetingSession from "./components/MeetingSession";
 import ArchivedMeetings from "./components/ArchivedMeetings";
 import Sidebar from "./components/Sidebar";
-import Topbar from "./components/Topbar";
+import Topbar from '@/components/Topbar.jsx';
 import ReportDashboard from "./components/ReportDashboard";
 
 
