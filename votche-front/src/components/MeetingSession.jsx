@@ -347,16 +347,6 @@ function MeetingSession({ user, onBack }) {
         onConfirm={confirmEndVoting}
         onCancel={() => setShowEndVotingConfirm(false)}
       />
-
-      {/* Adicione após o componente QRCodeSVG */}
-      <div className="qr-test-button">
-        <button
-          onClick={() => window.open(getQRCodeUrl(), "_blank")}
-          className="test-qr-button"
-        >
-          Testar Link do QR Code
-        </button>
-      </div>
     </div>
   );
 }

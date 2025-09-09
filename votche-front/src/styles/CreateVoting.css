@@ -4,14 +4,16 @@
   border-radius: 12px;
   box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
   overflow: hidden;
-  margin: 1.5rem 0;
+  margin: 25px 0;
   border: 1px solid rgba(0, 0, 0, 0.08);
+  padding: 20px;
 }
 
 .create-voting-header {
   padding: 1.25rem 1.5rem;
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
   background-color: rgba(46, 204, 113, 0.05);
+  margin-bottom: 1rem;
 }
 
 .create-voting-header h3 {
@@ -26,7 +28,7 @@
 }
 
 .form-group {
-  margin-bottom: 1.5rem;
+  margin-bottom: 20px;
 }
 
 .form-group label {
@@ -56,7 +58,7 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  margin-bottom: 0.75rem;
+  margin-bottom: 12px;
   position: relative;
 }
 
@@ -97,7 +99,8 @@
   justify-content: center;
   gap: 0.5rem;
   transition: all 0.15s ease;
-  margin-top: 0.5rem;
+  margin-top: 15px;
+  margin-bottom: 20px;
 }
 
 .add-option-btn:hover {
@@ -116,7 +119,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  margin-bottom: 1rem;
+  margin-bottom: 15px;
   transition: all 0.15s ease;
 }
 
@@ -137,8 +140,8 @@
 .form-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 1rem;
-  margin-top: 2rem;
+  gap: 10px;
+  margin-top: 30px;
 }
 
 .empty-state {
@@ -166,12 +169,13 @@
   color: white;
   border: none;
   border-radius: 8px;
-  padding: 0.8rem 1.5rem;
+  padding: 10px 20px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
   font-size: 1rem;
   box-shadow: 0 4px 12px rgba(39, 174, 96, 0.15);
+  margin-left: 10px;
 }
 
 .btn-submit:hover {
@@ -195,6 +199,17 @@
 .btn-cancel:hover {
   background-color: #c0392b;
   transform: translateY(-2px);
+}
+
+/* Aumentar o espaçamento após o botão Nova Votação */
+.create-voting-button, button.create-voting-button {
+  margin-bottom: 30px !important; /* Aumentamos para 30px para garantir um bom espaçamento */
+  display: block; /* Garante que o botão ocupe toda a largura disponível */
+}
+
+/* Se necessário, também podemos adicionar margem superior à primeira votação */
+.voting-item:first-child, .voting-card:first-child {
+  margin-top: 30px;
 }
 
 /* Responsividade */
