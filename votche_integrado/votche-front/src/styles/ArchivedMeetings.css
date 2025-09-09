@@ -1,0 +1,297 @@
+/* Estilos aprimorados para a listagem de reuniões arquivadas */
+
+.archived-meetings-container {
+  max-width: 900px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 0.5rem 1.5rem 2rem;
+}
+
+/* Header com estilo consistente */
+.archived-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+  position: relative;
+}
+
+.archived-header h2 {
+  margin: 0;
+  color: var(--primary-color);
+  font-size: 2rem;
+  font-weight: 600;
+  position: relative;
+}
+
+/* Linha decorativa abaixo do título */
+.archived-header h2::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -8px;
+  height: 3px;
+  width: 40px;
+  background-color: var(--primary-color);
+  border-radius: 2px;
+}
+
+/* Botões de ação no cabeçalho */
+.back-button,
+.refresh-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: var(--bg-card);
+  color: var(--text-medium);
+  border: 1px solid #e1e8ed;
+  padding: 0.8rem 1.2rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.back-button:hover,
+.refresh-button:hover {
+  background-color: var(--bg-card-hover);
+  color: var(--text-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+}
+
+/* Grid responsivo para os cards */
+.archived-meetings-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+/* Cards aprimorados */
+.archived-meeting-card {
+  position: relative;
+  border-radius: 12px;
+  background-color: var(--bg-content);
+  border: 1px solid #e9eef2;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  transition: all 0.25s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+}
+
+.archived-meeting-card:hover {
+  border-color: #cad5df;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
+  transform: translateY(-4px);
+}
+
+/* Conteúdo do card */
+.archived-meeting-info {
+  flex: 1;
+  padding: 1.5rem;
+  cursor: default;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.archived-meeting-info h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1.25rem;
+  color: var(--text-dark);
+  font-weight: 600;
+}
+
+/* Metadados melhorados */
+.meeting-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.meeting-meta .meeting-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.3rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.meeting-meta .status-active {
+  color: var(--status-active);
+  background: rgba(30, 163, 74, 0.08);
+  border: 1px solid rgba(30, 163, 74, 0.08);
+}
+
+.meeting-meta .status-scheduled {
+  color: var(--status-scheduled);
+  background: rgba(74, 144, 226, 0.06);
+  border: 1px solid rgba(74, 144, 226, 0.06);
+}
+
+.meeting-meta .status-ended {
+  color: var(--status-ended);
+  background: rgba(120, 120, 120, 0.06);
+  border: 1px solid rgba(120, 120, 120, 0.06);
+}
+
+.meeting-meta .meeting-date {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--text-medium);
+  font-size: 0.85rem;
+}
+
+.meeting-meta .meeting-date svg {
+  color: var(--text-light);
+}
+
+/* Descrição com limite de altura */
+.meeting-description {
+  margin: 0.5rem 0 0;
+  color: var(--text-medium);
+  font-size: 0.92rem;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Ações no rodapé do card */
+.archived-meeting-actions,
+.archived-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.8rem;
+  padding: 1rem 1.5rem;
+  background-color: rgba(0, 0, 0, 0.02);
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.unarchive-btn {
+  flex: 1;
+  padding: 0.65rem 0;
+  border-radius: 8px;
+  background-color: rgba(52, 152, 219, 0.1);
+  color: #3498db;
+  border: 1px solid rgba(52, 152, 219, 0.2);
+  cursor: pointer;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: all 0.2s;
+}
+
+.delete-btn {
+  flex: 1;
+  padding: 0.65rem 0;
+  border-radius: 8px;
+  background-color: rgba(231, 76, 60, 0.1);
+  color: #e74c3c;
+  border: 1px solid rgba(231, 76, 60, 0.2);
+  cursor: pointer;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: all 0.2s;
+}
+
+.unarchive-btn:hover:not(:disabled) {
+  background-color: rgba(52, 152, 219, 0.18);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(52, 152, 219, 0.12);
+}
+
+.delete-btn:hover:not(:disabled) {
+  background-color: rgba(231, 76, 60, 0.18);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(231, 76, 60, 0.12);
+}
+
+.unarchive-btn:disabled,
+.delete-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Estados vazios melhorados */
+.empty-state {
+  text-align: center;
+  padding: 3rem 2rem;
+  background-color: var(--bg-card);
+  border-radius: 12px;
+  border: 1px dashed #e1e8ed;
+  margin-top: 1rem;
+}
+
+.empty-state p {
+  font-size: 1.1rem;
+  color: var(--text-medium);
+  margin-bottom: 0;
+}
+
+/* Estados de carregamento */
+.loading-state {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+  color: var(--text-medium);
+  background-color: var(--bg-card);
+  border-radius: 12px;
+  font-size: 1.1rem;
+}
+
+/* Mensagens de erro */
+.error-message {
+  padding: 1rem;
+  background-color: rgba(231, 76, 60, 0.08);
+  border: 1px solid rgba(231, 76, 60, 0.2);
+  border-radius: 8px;
+  color: #c0392b;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .archived-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .archived-meetings-list {
+    grid-template-columns: 1fr;
+  }
+
+  .archived-actions {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 480px) {
+  .back-button,
+  .refresh-button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .archived-header {
+    gap: 0.75rem;
+  }
+}

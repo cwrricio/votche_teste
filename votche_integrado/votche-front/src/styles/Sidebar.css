@@ -1,0 +1,280 @@
+/* Este arquivo complementa as configurações básicas do App.css com estilos específicos da sidebar */
+
+/* Sidebar - revisão visual completa
+   Objetivos:
+   - altura = toda a tela abaixo do header (usa --header-height)
+   - cor verde coerente com a landing (usa --primary-color / --primary-dark)
+   - largura adaptável mas suficiente para conteúdo (min/max)
+   - ícones e hover com mais capricho
+*/
+
+/* Compact layout, hover fix, logo centralizada */
+
+/* Sidebar principal (ajustado para ser mais enxuto) */
+.sidebar {
+  position: fixed;
+  top: 0 !important;
+  left: 0;
+  height: 100vh !important;
+  min-width: 64px;
+  width: 260px; /* Aumentado de 240px para 260px */
+  max-width: 300px;
+  padding: 10px 10px; /* mais enxuto */
+  display: flex;
+  flex-direction: column;
+  gap: 10px; /* menor gap entre itens */
+  background-color: var(--primary-color, #1ea34a);
+  background-image: linear-gradient(
+    180deg,
+    var(--primary-color, #1ea34a) 0%,
+    var(--primary-dark, #0b6b2b) 100%
+  );
+  color: #fff;
+  z-index: 9999;
+  border-radius: 0;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  transition: width 0.3s ease, box-shadow 0.16s ease; /* Suavizar transição ao abrir/fechar */
+}
+
+/* Header com logo centralizada e responsiva */
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: center; /* centraliza a logo na sidebar */
+  padding: 6px 4px;
+  margin-bottom: 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+.sidebar-header .sidebar-logo {
+  width: 140px;
+  max-width: 85%;
+  height: auto;
+  display: block;
+  object-fit: contain;
+  filter: drop-shadow(0 3px 8px rgba(255, 255, 255, 0.1));
+}
+
+/* Menu compactado */
+.sidebar-menu {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px; /* Menos espaço entre itens do menu */
+}
+
+/* Itens mais enxutos */
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 0px; /* Gap menor entre ícone e texto */
+  padding: 6px 4px; /* Padding mais compacto */
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.96);
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.12s ease, transform 0.08s ease,
+    color 0.12s ease;
+  font-weight: 350; /* Normal em vez de negrito */
+  font-size: 0.9rem; /* Tamanho de fonte reduzido */
+  background: transparent !important;
+  width: 100%;
+  text-align: left;
+  line-height: 1; /* evita desalinhamento por line-height */
+}
+
+/* forçar alinhamento do texto (segundo span) e do ícone */
+.sidebar-link > .sidebar-icon,
+.sidebar-link > span:not(.sidebar-icon) {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+}
+
+/* remover contorno azul no foco (mas manter indicação suave) */
+.sidebar-link:focus,
+.sidebar-link:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+  /* alternativa suave: background highlight já cobre acessibilidade visual */
+  background-color: rgba(255, 0, 0, 0.06) !important;
+}
+
+/* evitar que o navegador mostre contorno azul em botões após clique no Windows/Chromium */
+.sidebar-link::-moz-focus-inner {
+  border: 0;
+}
+
+/* pequenos ajustes para quando não há ícone (Nova Reunião / Configurações) */
+.sidebar-link > span:not(.sidebar-icon) {
+  margin-left: 4px;
+}
+
+/* Ícone sempre visível e mais à esquerda */
+.sidebar-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px; /* Menor tamanho */
+  height: 28px; /* Menor tamanho */
+  min-width: 28px;
+  font-size: 1rem; /* Tamanho reduzido */
+  color: white !important; /* Força ícones a serem sempre brancos */
+  background: transparent !important;
+  border-radius: 6px;
+  margin-left: 0;
+  margin-right: 4px;
+  transition: transform 0.12s ease;
+}
+
+/* Garantir que os ícones sejam sempre brancos e consistentes */
+
+/* Garantir que ícones sejam sempre brancos */
+.sidebar-icon,
+.sidebar .sidebar-icon,
+.app-layout .sidebar .sidebar-icon,
+.sidebar-link .sidebar-icon {
+  color: rgba(255, 255, 255, 0.85) !important;
+  background: transparent !important;
+  filter: none !important;
+  text-shadow: none !important;
+  font-size: 1.1rem !important;
+}
+
+/* Estado ativo mais sutil */
+.sidebar-link.active .sidebar-icon,
+.sidebar-link:hover .sidebar-icon {
+  color: #ffffff !important;
+}
+
+/* Substituir emojis por ícones do react-icons */
+.sidebar-menu-item:nth-child(1) .sidebar-icon {
+  font-family: inherit;
+}
+
+/* Remover qualquer glow ou efeito especial nos ícones */
+.sidebar-link:hover .sidebar-icon,
+.sidebar-link.active .sidebar-icon {
+  filter: none !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+
+/* Hover: substituir qualquer azul por destaque sutil (override seguro) */
+.app-layout .sidebar .sidebar-link:hover,
+.app-layout .sidebar .sidebar-link:focus,
+.sidebar .sidebar-link:hover,
+.sidebar .sidebar-link:focus {
+  background-color: rgba(255, 255, 255, 0.06) !important;
+  color: #fff !important;
+  transform: translateX(3px);
+}
+.app-layout .sidebar .sidebar-link:hover .sidebar-icon,
+.app-layout .sidebar .sidebar-link:focus .sidebar-icon,
+.sidebar .sidebar-link:hover .sidebar-icon,
+.sidebar .sidebar-link:focus .sidebar-icon {
+  transform: translateY(-2px) scale(1.04);
+  color: #fff !important;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.12));
+}
+
+/* Garantir que os ícones continuem brancos mesmo em estados diferentes */
+.sidebar-link:hover .sidebar-icon,
+.sidebar-link:focus .sidebar-icon,
+.sidebar-link.active .sidebar-icon {
+  color: white !important; /* Força branco em todos os estados */
+}
+
+/* Link ativo mais sutil */
+.sidebar-link.active {
+  background-color: rgba(255, 255, 255, 0.09) !important;
+  color: #fff !important;
+  font-weight: 500; /* Médio em vez de negrito para destaque */
+}
+
+/* Texto truncado quando necessário, mas ícones sempre visíveis */
+.sidebar-link span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: inline-block;
+  max-width: calc(100% - 56px);
+}
+
+/* Scrollbar discreta */
+.sidebar::-webkit-scrollbar {
+  width: 8px;
+}
+.sidebar::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+}
+
+/* RESPONSIVIDADE */
+/* Mobile: texto oculto, logo reduzida (mas presente), ícones sempre visíveis e centralizados */
+@media (max-width: 480px) {
+  .sidebar {
+    width: 72px;
+    padding: 10px 6px;
+  }
+
+  .sidebar-header {
+    justify-content: center;
+    padding: 8px 0;
+    margin-bottom: 6px;
+  }
+  .sidebar-header .sidebar-logo {
+    width: 46px;
+    max-width: 100%;
+  }
+
+  .sidebar-link {
+    justify-content: center; /* alinhar ícones ao centro na coluna estreita */
+    padding: 8px 0;
+  }
+
+  .sidebar-link span {
+    display: none;
+  } /* texto escondido somente no mobile */
+  .sidebar-badge {
+    display: none;
+  }
+
+  .sidebar-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 1.25rem;
+    margin-right: 0;
+  }
+}
+
+/* Extra small */
+@media (max-width: 360px) {
+  .sidebar {
+    width: 64px;
+  }
+  .sidebar-header .sidebar-logo {
+    width: 40px;
+  }
+  .sidebar-icon {
+    width: 36px;
+    height: 36px;
+    font-size: 1.15rem;
+  }
+}
+
+/* Força para evitar que App.css sobrescreva fundo/hover */
+.app-layout .sidebar {
+  background-image: linear-gradient(
+    180deg,
+    var(--primary-color, #1ea34a) 0%,
+    var(--primary-dark, #0b6b2b) 100%
+  );
+}
+.app-layout .sidebar .sidebar-link:hover {
+  background-color: rgba(255, 255, 255, 0.06) !important;
+  color: #fff !important;
+}

@@ -1,0 +1,134 @@
+.meeting-details {
+  background-color: var(--bg-content);
+  border-radius: 12px;
+  padding: 1.5rem;
+  max-width: 600px;
+  margin: 0 auto;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e1e8ed;
+}
+
+.meeting-details h2 {
+  margin-top: 0;
+  color: var(--text-dark);
+  border-bottom: 1px solid #e1e8ed;
+  padding-bottom: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.meeting-description {
+  margin: 1rem 0;
+  color: var(--text-medium);
+}
+
+.meeting-schedule {
+  background-color: var(--bg-card);
+  border-radius: 8px;
+  padding: 1rem;
+  margin: 1rem 0;
+  border: 1px solid #e1e8ed;
+}
+
+.meeting-schedule h3 {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  font-size: 1rem;
+  color: var(--text-dark);
+}
+
+.meeting-schedule p {
+  margin: 0.5rem 0;
+  color: var(--text-medium);
+}
+
+.meeting-status-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  margin-bottom: 1rem;
+}
+
+.meeting-status-badge.status-active {
+  background-color: rgba(58, 155, 93, 0.1);
+  color: var(--status-active);
+  border: 1px solid rgba(58, 155, 93, 0.2);
+}
+
+.meeting-status-badge.status-scheduled {
+  background-color: rgba(74, 144, 226, 0.1);
+  color: var(--status-scheduled);
+  border: 1px solid rgba(74, 144, 226, 0.2);
+}
+
+.meeting-status-badge.status-ended {
+  background-color: rgba(158, 158, 158, 0.1);
+  color: var(--status-ended);
+  border: 1px solid rgba(158, 158, 158, 0.2);
+}
+
+.meeting-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 1.5rem;
+}
+
+.btn-primary {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+  box-shadow: 0 2px 4px rgba(58, 155, 93, 0.15);
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-dark);
+  box-shadow: 0 4px 8px rgba(58, 155, 93, 0.2);
+}
+
+.btn-secondary {
+  background-color: var(--bg-card);
+  color: var(--text-medium);
+  border: 1px solid #e1e8ed;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-secondary:hover {
+  background-color: var(--bg-card-hover);
+  color: var(--text-dark);
+}
+
+/* Estilos para o QR code e botão de cópia */
+.meeting-password-with-copy {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.copy-button,
+.qr-code-toggle {
+  background-color: rgba(58, 155, 93, 0.1);
+  color: var(--primary-color);
+  border: 1px solid rgba(58, 155, 93, 0.2);
+  border-radius: 4px;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.copy-button:hover,
+.qr-code-toggle:hover {
+  background-color: rgba(58, 155, 93, 0.2);
+}
