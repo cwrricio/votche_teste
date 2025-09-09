@@ -6,6 +6,7 @@ import {
   endMeeting,
   registerVoteInMeeting,
   endVoting,
+  createVotingInMeeting,
 } from "../firebase";
 import CreateVotingForm from "./CreateVotingForm";
 import "../styles/MeetingSession.css";
@@ -120,41 +121,24 @@ function MeetingSession({ meetingId, user, onBack }) {
     setVotingOptions(newOptions);
   };
 
-  const handleCreateVoting = async (e) => {
-    e.preventDefault();
+  const handleCreateVoting = async (votingData) => {
     setError("");
-
-    // Validações
-    if (!votingTitle.trim()) {
-      setError("Informe um título para a votação");
-      return;
-    }
-
-    const validOptions = votingOptions.filter((opt) => opt.trim() !== "");
-    if (validOptions.length < 2) {
+    // Validação extra: garantir que há pelo menos 2 opções válidas
+    const optionsValidas = Object.keys(votingData.options || {}).filter(opt => opt.trim());
+    if (optionsValidas.length < 2) {
       setError("Informe pelo menos 2 opções válidas");
       return;
     }
-
-    if (votingDuration < 1) {
-      setError("A duração mínima é de 1 minuto");
-      return;
-    }
-
     try {
       setIsCreatingVoting(true);
       await createVotingInMeeting(
         meetingId,
-        votingTitle.trim(),
-        validOptions,
-        votingDuration,
+        votingData.title.trim(),
+        optionsValidas,
+        votingData.duration || 5,
         user.uid
       );
-
-      // Resetar formulário
-      setVotingTitle("");
-      setVotingOptions(["", ""]);
-      setVotingDuration(5);
+      // Resetar formulário/modal
       setShowCreateVoting(false);
     } catch (error) {
       setError(error.message || "Erro ao criar votação");

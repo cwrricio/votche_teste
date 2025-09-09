@@ -1,5 +1,5 @@
 // Componente de votação aprimorado
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   FaVoteYea,
@@ -16,11 +16,37 @@ function VotingItem({
   meetingId,
   title,
   isActive,
-  isAnonymous = false, // Nova propriedade para indicar se a votação é anônima
+  isAnonymous = false,
+  endTime,
+  options,
   onEndVoting,
   totalVotes = 0,
   onVote,
 }) {
+  // Timer de contagem regressiva
+  const [timeLeft, setTimeLeft] = useState(null);
+
+  useEffect(() => {
+    if (!isActive || !endTime) {
+      setTimeLeft(null);
+      return;
+    }
+    const updateTimer = () => {
+      const now = Date.now();
+      const diff = Math.max(0, Math.floor((endTime - now) / 1000));
+      setTimeLeft(diff);
+    };
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+    return () => clearInterval(interval);
+  }, [isActive, endTime]);
+
+  // Função para formatar segundos em mm:ss
+  const formatTime = (seconds) => {
+    const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+    const s = (seconds % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
+  };
   const navigate = useNavigate();
   const [tempSelectedOption, setTempSelectedOption] = useState(null);
   const [selectedOption, setSelectedOption] = useState(null);
@@ -58,41 +84,50 @@ function VotingItem({
           )}
         </div>
         <span className={`voting-status ${isActive ? "active" : ""}`}>
-          {isActive ? "Ativa" : "Encerrada"}
+          {isActive ? (
+            timeLeft !== null ? (
+              <>
+                Ativa — <span className="voting-timer">{formatTime(timeLeft)}</span>
+              </>
+            ) : (
+              "Ativa"
+            )
+          ) : (
+            "Encerrada"
+          )}
         </span>
       </div>
 
       <div className="voting-body">
         <div className="voting-options">
-          <button
-            className={`vote-option-btn ${
-              tempSelectedOption === "concordo" ? "temp-selected" : ""
-            } ${selectedOption === "concordo" ? "selected" : ""}`}
-            onClick={() => handleSelectOption("concordo")}
-            disabled={voted}
-          >
-            Concordo
-          </button>
-
-          <button
-            className={`vote-option-btn ${
-              tempSelectedOption === "discordo" ? "temp-selected" : ""
-            } ${selectedOption === "discordo" ? "selected" : ""}`}
-            onClick={() => handleSelectOption("discordo")}
-            disabled={voted}
-          >
-            Discordo
-          </button>
-
-          <button
-            className={`vote-option-btn ${
-              tempSelectedOption === "abstenho" ? "temp-selected" : ""
-            } ${selectedOption === "abstenho" ? "selected" : ""}`}
-            onClick={() => handleSelectOption("abstenho")}
-            disabled={voted}
-          >
-            Me abstenho
-          </button>
+          {/* Renderização dinâmica das opções de votação com contagem de votos */}
+          {Array.isArray(options)
+            ? options.map((option) => (
+              <button
+                key={option}
+                className={`vote-option-btn ${tempSelectedOption === option ? "temp-selected" : ""} ${selectedOption === option ? "selected" : ""}`}
+                onClick={() => handleSelectOption(option)}
+                disabled={voted}
+              >
+                {option}
+                {typeof options === 'object' && options[option] !== undefined && (
+                  <span className="vote-count"> ({options[option]})</span>
+                )}
+              </button>
+            ))
+            : options && typeof options === 'object'
+              ? Object.keys(options).map((option) => (
+                <button
+                  key={option}
+                  className={`vote-option-btn ${tempSelectedOption === option ? "temp-selected" : ""} ${selectedOption === option ? "selected" : ""}`}
+                  onClick={() => handleSelectOption(option)}
+                  disabled={voted}
+                >
+                  {option}
+                  <span className="vote-count"> ({options[option] || 0})</span>
+                </button>
+              ))
+              : null}
 
           {tempSelectedOption && !voted && (
             <button className="confirm-vote-btn" onClick={handleConfirmVote}>

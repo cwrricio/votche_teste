@@ -40,7 +40,7 @@ const VotingList = ({
   return (
     <div className="votings-container">
       <div className="votings-header">
-       
+
         {isOwner && (
           <button className="new-vote-btn" onClick={onCreateVoting}>
             <FaPlus /> Nova Votação
@@ -66,8 +66,14 @@ const VotingList = ({
             return (
               <VotingItem
                 key={voting.id}
+                id={voting.id}
+                meetingId={voting.meetingId}
                 title={voting.title}
                 isActive={isActive}
+                endTime={voting.endTime}
+                options={voting.options}
+                totalVotes={totalVotes}
+                onVote={(option) => handleVote(voting.id, option)}
                 onEndVoting={() => onEndVoting(voting.id)}
                 onViewDetails={() =>
                   console.log(`Ver detalhes: ${voting.title}`)
