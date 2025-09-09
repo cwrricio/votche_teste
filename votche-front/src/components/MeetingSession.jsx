@@ -14,8 +14,11 @@ import VotingList from "./VotingList";
 import { FaCopy, FaCheck } from "react-icons/fa";
 // Importe o componente ConfirmModal
 import ConfirmModal from "./ConfirmModal";
+import { useParams } from "react-router-dom";
 
-function MeetingSession({ meetingId, user, onBack }) {
+function MeetingSession({ user, onBack }) {
+  const { id: meetingId } = useParams(); // Obter o ID diretamente da URL
+
   const [meeting, setMeeting] = useState(null);
   const [votings, setVotings] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -201,6 +204,17 @@ function MeetingSession({ meetingId, user, onBack }) {
     setVotingOptions(["Concordo", "Discordo", "Me abstenho"]);
   };
 
+  // Construir a URL para o QR Code
+  const getQRCodeUrl = () => {
+    // URL base do seu site
+    const baseUrl = window.location.origin;
+    // URL completa com ID da reunião e senha
+    const url = `${baseUrl}/join-direct/${meetingId}/${meeting.password}`;
+
+    console.log("QR Code URL:", url); // Adicione esta linha
+    return url;
+  };
+
   if (isLoading) {
     return <div className="loading">Carregando reunião...</div>;
   }
@@ -263,9 +277,10 @@ function MeetingSession({ meetingId, user, onBack }) {
               </p>
             </div>
 
+            {/* Seção do QR Code */}
             <div className="qr-code-container">
               <QRCodeSVG
-                value={meeting.password}
+                value={getQRCodeUrl()}
                 size={180}
                 bgColor={"#ffffff"}
                 fgColor={"#000000"}
@@ -273,7 +288,7 @@ function MeetingSession({ meetingId, user, onBack }) {
                 includeMargin={true}
               />
               <p className="qr-code-info">
-                Participantes podem escanear este QR Code para entrar na reunião
+                Escaneie este QR Code para acessar diretamente a reunião
               </p>
             </div>
           </div>
@@ -332,6 +347,16 @@ function MeetingSession({ meetingId, user, onBack }) {
         onConfirm={confirmEndVoting}
         onCancel={() => setShowEndVotingConfirm(false)}
       />
+
+      {/* Adicione após o componente QRCodeSVG */}
+      <div className="qr-test-button">
+        <button
+          onClick={() => window.open(getQRCodeUrl(), "_blank")}
+          className="test-qr-button"
+        >
+          Testar Link do QR Code
+        </button>
+      </div>
     </div>
   );
 }

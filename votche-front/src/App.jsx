@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
+  BrowserRouter as Router,
   Routes,
   Route,
-  useNavigate,
   Navigate,
+  useNavigate,
   useLocation,
 } from "react-router-dom";
+import { AuthProvider } from "./context/AuthContext";
 import "./App.css";
 import {
   getAuth,
@@ -31,11 +33,12 @@ import EnterMeeting from "./components/EnterMeeting";
 import MeetingSession from "./components/MeetingSession";
 import ArchivedMeetings from "./components/ArchivedMeetings";
 import Sidebar from "./components/Sidebar";
-import Topbar from '@/components/NavigationBar';
+import Topbar from "@/components/NavigationBar";
 import ReportDashboard from "./components/ReportDashboard";
+import DirectJoinWrapper from "./components/DirectJoinWrapper";
 
-
-function App() {
+// Este componente terá acesso aos hooks do Router
+function AppContent() {
   const [user, setUser] = useState(null);
   const [showDropdown, setShowDropdown] = useState(false);
   const [activeMeeting, setActiveMeeting] = useState(null);
@@ -47,8 +50,8 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const dropdownRef = useRef(null);
-  const navigate = useNavigate();
-  const location = useLocation();
+  const navigate = useNavigate(); // Agora isto funcionará
+  const location = useLocation(); // E isto também
 
   const isLandingPage = location.pathname === "/";
 
@@ -62,6 +65,15 @@ function App() {
       if (authUser) {
         setUser(authUser);
         await loadUserMeetings(authUser.uid);
+
+        // Verificar se há um ID de reunião salvo no localStorage
+        const savedMeetingId = localStorage.getItem("activeMeetingId");
+        if (savedMeetingId) {
+          console.log("Encontrado ID de reunião salvo:", savedMeetingId);
+          setActiveMeeting({ id: savedMeetingId });
+          localStorage.removeItem("activeMeetingId"); // Limpar após uso
+        }
+
         const savedPath = localStorage.getItem("authRedirectPath");
         if (savedPath) {
           localStorage.removeItem("authRedirectPath");
@@ -216,7 +228,9 @@ function App() {
 
   return (
     <div
-      className={`app-container ${isLandingPage ? "landing-page-active" : ""}`}
+      className={`app-container ${
+        location.pathname === "/" ? "landing-page-active" : ""
+      }`}
     >
       {!isLandingPage && (
         <Topbar
@@ -289,11 +303,7 @@ function App() {
               <Route
                 path="/meeting/:id"
                 element={
-                  <MeetingSession
-                    meetingId={activeMeeting?.id}
-                    user={user}
-                    onBack={handleBackToHome}
-                  />
+                  <MeetingSession user={user} onBack={handleBackToHome} />
                 }
               />
               <Route
@@ -316,6 +326,10 @@ function App() {
               />
               <Route path="/app" element={<Navigate to="/home" replace />} />
               <Route path="/" element={<LandingPage />} />
+              <Route
+                path="/join-direct/:meetingId/:password"
+                element={<DirectJoinWrapper />}
+              />
             </Routes>
           </div>
         </div>
@@ -327,6 +341,20 @@ function App() {
         </div>
       )}
     </div>
+  );
+}
+
+// Este componente apenas configura o Router e a autenticação
+function App() {
+  return (
+    <Router>
+      <AuthProvider>
+        <Routes>
+          <Route path="/*" element={<AppContent />} />
+          {/* Outras rotas específicas podem vir aqui */}
+        </Routes>
+      </AuthProvider>
+    </Router>
   );
 }
 
