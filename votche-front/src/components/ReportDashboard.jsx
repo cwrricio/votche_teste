@@ -17,6 +17,7 @@ import {
 } from "react-icons/fa";
 import { getUserMeetings, listenToVotingsInMeeting } from "../firebase";
 import "../styles/ReportDashboard.css";
+import VotingDetailsTable from "./VotingDetailsTable";
 import {
   Chart as ChartJS,
   ArcElement,
@@ -579,9 +580,6 @@ const ReportDashboard = ({ user }) => {
                               </div>
                             </div>
 
-                  
-                            
-
                             {/* Lista de votações melhorada */}
                             <div className="votings-list">
                               {votings.length === 0 ? (
@@ -680,6 +678,17 @@ const ReportDashboard = ({ user }) => {
                                               </tfoot>
                                             )}
                                           </table>
+                                        </div>
+
+                                        {/* Resto dos elementos do relatório */}
+                                        <div className="voting-report-container">
+                                          {/* Usar o componente VotingDetailsTable sem título adicional */}
+                                          <VotingDetailsTable
+                                            voting={voting}
+                                            participants={
+                                              meeting?.participants || {}
+                                            }
+                                          />
                                         </div>
                                       </div>
                                     </div>

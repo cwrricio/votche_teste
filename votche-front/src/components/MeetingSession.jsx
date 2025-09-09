@@ -6,11 +6,14 @@ import {
   endMeeting,
   registerVoteInMeeting,
   endVoting,
+  createVotingInMeeting,
 } from "../firebase";
 import CreateVotingForm from "./CreateVotingForm";
 import "../styles/MeetingSession.css";
 import VotingList from "./VotingList";
 import { FaCopy, FaCheck } from "react-icons/fa";
+// Importe o componente ConfirmModal
+import ConfirmModal from "./ConfirmModal";
 
 function MeetingSession({ meetingId, user, onBack }) {
   const [meeting, setMeeting] = useState(null);
@@ -29,6 +32,11 @@ function MeetingSession({ meetingId, user, onBack }) {
 
   // Estado para controlar qual votação está expandida
   const [expandedVotingId, setExpandedVotingId] = useState(null);
+
+  // Adicionar estados para controlar os modais de confirmação
+  const [showEndMeetingConfirm, setShowEndMeetingConfirm] = useState(false);
+  const [showEndVotingConfirm, setShowEndVotingConfirm] = useState(false);
+  const [votingToEnd, setVotingToEnd] = useState(null);
 
   useEffect(() => {
     // Verificar se temos um meetingId
@@ -65,15 +73,17 @@ function MeetingSession({ meetingId, user, onBack }) {
   }, [meetingId]);
 
   // Função para encerrar a reunião
-  const handleEndMeeting = async () => {
-    if (!confirm("Tem certeza que deseja encerrar esta reunião?")) {
-      return;
-    }
+  const handleEndMeetingClick = () => {
+    setShowEndMeetingConfirm(true);
+  };
 
+  const confirmEndMeeting = async () => {
     try {
       await endMeeting(meetingId, user.uid);
+      setShowEndMeetingConfirm(false);
     } catch (error) {
       setError(error.message || "Erro ao encerrar reunião");
+      setShowEndMeetingConfirm(false);
     }
   };
 
@@ -87,15 +97,19 @@ function MeetingSession({ meetingId, user, onBack }) {
   };
 
   // Função para encerrar uma votação
-  const handleEndVoting = async (votingId) => {
-    if (!confirm("Tem certeza que deseja encerrar esta votação?")) {
-      return;
-    }
+  const handleEndVotingClick = (votingId) => {
+    setVotingToEnd(votingId);
+    setShowEndVotingConfirm(true);
+  };
 
+  const confirmEndVoting = async () => {
     try {
-      await endVoting(meetingId, votingId, user.uid);
+      await endVoting(meetingId, votingToEnd, user.uid);
+      setShowEndVotingConfirm(false);
+      setVotingToEnd(null);
     } catch (error) {
       setError(error.message || "Erro ao encerrar votação");
+      setShowEndVotingConfirm(false);
     }
   };
 
@@ -120,41 +134,21 @@ function MeetingSession({ meetingId, user, onBack }) {
     setVotingOptions(newOptions);
   };
 
-  const handleCreateVoting = async (e) => {
-    e.preventDefault();
+  // Modificar a função handleCreateVoting para receber dados ao invés de evento
+  const handleCreateVoting = async (formData) => {
     setError("");
-
-    // Validações
-    if (!votingTitle.trim()) {
-      setError("Informe um título para a votação");
-      return;
-    }
-
-    const validOptions = votingOptions.filter((opt) => opt.trim() !== "");
-    if (validOptions.length < 2) {
-      setError("Informe pelo menos 2 opções válidas");
-      return;
-    }
-
-    if (votingDuration < 1) {
-      setError("A duração mínima é de 1 minuto");
-      return;
-    }
 
     try {
       setIsCreatingVoting(true);
       await createVotingInMeeting(
         meetingId,
-        votingTitle.trim(),
-        validOptions,
-        votingDuration,
+        formData.title.trim(),
+        Object.keys(formData.options),
+        15, // Duração padrão em minutos (pode ser ajustada conforme necessidade)
         user.uid
       );
 
       // Resetar formulário
-      setVotingTitle("");
-      setVotingOptions(["", ""]);
-      setVotingDuration(5);
       setShowCreateVoting(false);
     } catch (error) {
       setError(error.message || "Erro ao criar votação");
@@ -223,7 +217,7 @@ function MeetingSession({ meetingId, user, onBack }) {
     );
   }
 
-  const isOwner = meeting.createdBy === user.uid;
+  const isOwner = meeting && user && meeting.createdBy === user.uid;
 
   return (
     <div className="meeting-session">
@@ -233,7 +227,7 @@ function MeetingSession({ meetingId, user, onBack }) {
         </button>
 
         {isOwner && meeting.active && (
-          <button className="end-meeting-btn" onClick={handleEndMeeting}>
+          <button className="end-meeting-btn" onClick={handleEndMeetingClick}>
             Encerrar Reunião
           </button>
         )}
@@ -311,11 +305,33 @@ function MeetingSession({ meetingId, user, onBack }) {
             votings={votings}
             isOwner={isOwner}
             onVote={handleVote}
-            onEndVoting={handleEndVoting}
+            onEndVoting={handleEndVotingClick}
             onCreateVoting={() => setShowCreateVoting(true)}
+            participants={meeting?.participants || {}}
           />
         )}
       </div>
+
+      {/* Adicionar os modais de confirmação */}
+      <ConfirmModal
+        open={showEndMeetingConfirm}
+        title="Encerrar Reunião"
+        message="Tem certeza que deseja encerrar esta reunião? Todas as votações ativas também serão encerradas."
+        confirmLabel="Encerrar Reunião"
+        cancelLabel="Cancelar"
+        onConfirm={confirmEndMeeting}
+        onCancel={() => setShowEndMeetingConfirm(false)}
+      />
+
+      <ConfirmModal
+        open={showEndVotingConfirm}
+        title="Encerrar Votação"
+        message="Tem certeza que deseja encerrar esta votação? Os participantes não poderão mais votar."
+        confirmLabel="Encerrar Votação"
+        cancelLabel="Cancelar"
+        onConfirm={confirmEndVoting}
+        onCancel={() => setShowEndVotingConfirm(false)}
+      />
     </div>
   );
 }

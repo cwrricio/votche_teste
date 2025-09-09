@@ -1,72 +1,71 @@
-import { useState } from 'react';
-import { getVotingByPin } from '../firebase';
-import '../styles/Voting.css';
+import { useState } from "react";
+import { joinMeetingByPassword } from "../firebase";
+import "../styles/Voting.css";
 
 function EnterVoting({ user, onComplete }) {
-  const [pin, setPin] = useState('');
+  const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+    setError("");
 
-    if (!pin || pin.length !== 4 || isNaN(pin)) {
-      setError('O PIN deve ter 4 números');
+    if (!password || password.length !== 6) {
+      setError("A senha deve ter 6 caracteres");
       return;
     }
 
     try {
       setIsLoading(true);
-      const voting = await getVotingByPin(pin);
-      
-      // Verificar se a votação já acabou
-      if (voting.endTime < Date.now() && voting.active) {
-        setError('Esta votação já foi encerrada');
-        return;
-      }
-      
-      onComplete(voting);
+
+      // Entrar na reunião usando a senha
+      const meeting = await joinMeetingByPassword(password, user.uid);
+
+      // Você pode adaptar o comportamento aqui dependendo do que deseja fazer
+      // após entrar na reunião (ex: mostrar as votações disponíveis)
+      onComplete(meeting);
     } catch (error) {
-      setError(error.message || 'Erro ao buscar votação');
+      setError(error.message || "Erro ao buscar reunião");
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Função que limita entrada para somente números e até 4 caracteres
-  const handlePinChange = (e) => {
-    const value = e.target.value.replace(/[^0-9]/g, '').slice(0, 4);
-    setPin(value);
+  // Função que limita entrada para 6 caracteres
+  const handlePasswordChange = (e) => {
+    const value = e.target.value.slice(0, 6).toUpperCase();
+    setPassword(value);
   };
 
   return (
     <div className="voting-form-container">
-      <h2>Entrar em uma Votação</h2>
-      
+      <h2>Entrar em uma Reunião</h2>
+
       {error && <div className="error-message">{error}</div>}
-      
+
       <form onSubmit={handleSubmit}>
         <div className="form-group">
-          <label htmlFor="pin">Digite o PIN da votação (4 números)</label>
-          <input 
-            type="text" 
-            id="pin"
-            value={pin}
-            onChange={handlePinChange}
-            placeholder="Digite o PIN de 4 números"
-            pattern="[0-9]{4}"
-            maxLength="4"
+          <label htmlFor="password">
+            Digite a senha da reunião (6 caracteres)
+          </label>
+          <input
+            type="text"
+            id="password"
+            value={password}
+            onChange={handlePasswordChange}
+            placeholder="Digite a senha de 6 caracteres"
+            maxLength="6"
             required
           />
         </div>
 
-        <button 
-          type="submit" 
-          className="submit-btn" 
-          disabled={isLoading || pin.length !== 4}
+        <button
+          type="submit"
+          className="submit-btn"
+          disabled={isLoading || password.length !== 6}
         >
-          {isLoading ? 'Buscando...' : 'Entrar na Votação'}
+          {isLoading ? "Verificando..." : "Entrar na Reunião"}
         </button>
       </form>
     </div>

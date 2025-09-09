@@ -171,8 +171,8 @@ const createNewMeeting = async (meetingData, user) => {
       },
     });
 
-    // Associar PIN à reunião (adicionar esta parte)
-    await set(ref(database, `pins/${meetingData.pin}`), {
+    // Associar senha à reunião
+    await set(ref(database, `passwords/${meetingData.password}`), {
       id: meetingData.id,
       type: "meeting",
     });
@@ -201,62 +201,6 @@ const createNewMeeting = async (meetingData, user) => {
   }
 };
 
-// Função para entrar em uma reunião por PIN
-const joinMeetingByPin = async (pin, userId) => {
-  try {
-    // Buscar dados pelo PIN
-    const pinRef = ref(database, `pins/${pin}`);
-    const pinSnapshot = await get(pinRef);
-
-    if (!pinSnapshot.exists()) {
-      throw new Error("PIN inválido");
-    }
-
-    const pinData = pinSnapshot.val();
-
-    // Verificar se é do tipo reunião
-    if (pinData.type !== "meeting") {
-      throw new Error("Este PIN não corresponde a uma reunião");
-    }
-
-    const meetingId = pinData.id;
-
-    // Verificar se a reunião existe
-    const meetingRef = ref(database, `meetings/${meetingId}`);
-    const meetingSnapshot = await get(meetingRef);
-
-    if (!meetingSnapshot.exists()) {
-      throw new Error("Reunião não encontrada");
-    }
-
-    // Verificar se a reunião está ativa
-    const meetingData = meetingSnapshot.val();
-    if (!meetingData.active) {
-      throw new Error("Esta reunião foi encerrada");
-    }
-
-    // Adicionar usuário como participante
-    await set(
-      ref(database, `meetings/${meetingId}/participants/${userId}`),
-      true
-    );
-
-    // Registrar participação do usuário
-    await set(
-      ref(database, `users/${userId}/participatingIn/${meetingId}`),
-      true
-    );
-
-    return {
-      id: meetingId,
-      ...meetingData,
-    };
-  } catch (error) {
-    console.error("Erro ao entrar na reunião:", error);
-    throw error;
-  }
-};
-
 // Função para entrar em uma reunião por senha
 const joinMeetingByPassword = async (password, userId) => {
   try {
@@ -265,60 +209,131 @@ const joinMeetingByPassword = async (password, userId) => {
       throw new Error("Senha não fornecida");
     }
 
-    // Recuperar todas as reuniões ativas
-    const meetingsRef = ref(database, "meetings");
-    const snapshot = await get(meetingsRef);
+    // Normalizar a senha (remover espaços e converter para maiúsculas)
+    const normalizedPassword = password.trim().toUpperCase();
 
-    if (!snapshot.exists()) {
-      throw new Error("Nenhuma reunião encontrada");
-    }
+    console.log("Tentando entrar com senha:", normalizedPassword);
 
-    let found = false;
-    let meetingData = null;
+    // Buscar a reunião associada à senha
+    const passwordRef = ref(database, `passwords/${normalizedPassword}`);
+    const passwordSnapshot = await get(passwordRef);
 
-    // Comparar a senha usando trim() para remover possíveis espaços extras
-    snapshot.forEach((childSnapshot) => {
-      const meeting = childSnapshot.val();
-      // Verificar se a reunião existe e está ativa
-      if (
-        meeting &&
-        meeting.active &&
-        meeting.password &&
-        meeting.password.trim() === password.trim()
-      ) {
-        found = true;
-        meetingData = meeting;
-        return true; // Interrompe o forEach
-      }
-    });
-
-    if (!found) {
-      console.log("Senha não encontrada:", password);
+    if (!passwordSnapshot.exists()) {
       console.log(
-        "Senhas disponíveis:",
-        Array.from(snapshot.val() || [], (m) => m?.password).filter(Boolean)
+        "Senha não encontrada no registro de senhas:",
+        normalizedPassword
       );
+
+      // Tentar buscar reuniões diretamente para verificar se a senha existe
+      const meetingsRef = ref(database, "meetings");
+      const meetingsSnapshot = await get(meetingsRef);
+
+      if (meetingsSnapshot.exists()) {
+        let foundMeeting = null;
+
+        meetingsSnapshot.forEach((childSnapshot) => {
+          const meeting = childSnapshot.val();
+          if (
+            meeting.password &&
+            meeting.password.toUpperCase() === normalizedPassword
+          ) {
+            foundMeeting = {
+              id: childSnapshot.key,
+              ...meeting,
+            };
+            return true; // Equivalente a break
+          }
+        });
+
+        if (foundMeeting) {
+          // Se encontrou a reunião, registrar a senha no local correto
+          await set(ref(database, `passwords/${normalizedPassword}`), {
+            id: foundMeeting.id,
+            type: "meeting",
+          });
+
+          // Continuar com o processo usando o ID encontrado
+          const meetingId = foundMeeting.id;
+
+          // Verificar se a reunião está ativa
+          if (!foundMeeting.active) {
+            throw new Error("Esta reunião foi encerrada");
+          }
+
+          // Adicionar usuário como participante
+          await update(ref(database, `meetings/${meetingId}/participants`), {
+            [userId]: {
+              joinedAt: new Date().toISOString(),
+            },
+          });
+
+          // Registrar participação do usuário
+          await update(ref(database, `users/${userId}/participatingIn`), {
+            [meetingId]: {
+              joinedAt: new Date().toISOString(),
+            },
+          });
+
+          return {
+            id: meetingId,
+            ...foundMeeting,
+          };
+        }
+      }
+
       throw new Error("Senha inválida");
     }
 
-    // Verificar se o usuário já está na lista de participantes
-    const participantsRef = ref(
-      database,
-      `meetings/${meetingData.id}/participants`
-    );
-    const participantsSnapshot = await get(participantsRef);
-    const participants = participantsSnapshot.val() || {};
+    const passwordData = passwordSnapshot.val();
+    console.log("Dados da senha encontrada:", passwordData);
 
-    // Se o usuário não estiver na lista de participantes, adicione-o
-    if (!participants[userId]) {
-      await update(ref(database, `meetings/${meetingData.id}/participants`), {
-        [userId]: {
-          joinedAt: new Date().toISOString(),
-        },
-      });
+    // Verificar se a senha está associada a uma reunião
+    if (passwordData.type !== "meeting") {
+      throw new Error("Esta senha não corresponde a uma reunião");
     }
 
-    return meetingData;
+    const meetingId = passwordData.id;
+
+    // Buscar os dados da reunião
+    const meetingRef = ref(database, `meetings/${meetingId}`);
+    const meetingSnapshot = await get(meetingRef);
+
+    if (!meetingSnapshot.exists()) {
+      throw new Error("Reunião não encontrada");
+    }
+
+    const meetingData = meetingSnapshot.val();
+
+    // Verificar se a reunião está ativa
+    if (!meetingData.active) {
+      throw new Error("Esta reunião foi encerrada");
+    }
+
+    // Obter informações completas do usuário atual
+    const userInfo = auth.currentUser;
+
+    // Adicionar usuário como participante com informações completas
+    await update(
+      ref(database, `meetings/${meetingId}/participants/${userId}`),
+      {
+        joinedAt: new Date().toISOString(),
+        name: userInfo.displayName || "",
+        email: userInfo.email || "",
+        photoURL: userInfo.photoURL || "",
+      }
+    );
+
+    // Registrar participação do usuário
+    await update(ref(database, `users/${userId}/participatingIn`), {
+      [meetingId]: {
+        joinedAt: new Date().toISOString(),
+      },
+    });
+
+    return {
+      id: meetingId,
+      ...meetingData,
+    };
   } catch (error) {
     console.error("Erro ao entrar na reunião:", error);
     throw error;
@@ -468,10 +483,14 @@ const createVotingInMeeting = async (
     // Calcular tempo de término da votação
     const endTime = Date.now() + durationMinutes * 60 * 1000;
 
-    // Criar objeto de opções com contagem zero
+    // Criar objeto de opções com contagem zero, normalizando todas as opções
     const optionsObj = {};
     options.forEach((option) => {
-      optionsObj[option] = 0;
+      // Normalizar opção: primeira letra maiúscula, resto minúsculo
+      const normalizedOption =
+        option.trim().charAt(0).toUpperCase() +
+        option.trim().slice(1).toLowerCase();
+      optionsObj[normalizedOption] = 0;
     });
 
     // Referência para nova votação
@@ -501,7 +520,12 @@ const createVotingInMeeting = async (
 // Função para registrar voto em uma votação de uma reunião
 const registerVoteInMeeting = async (meetingId, votingId, option, userId) => {
   try {
-    // Verificar se a reunião e votação existem
+    // Normalizar a opção para garantir consistência
+    const normalizedOption =
+      option.trim().charAt(0).toUpperCase() +
+      option.trim().slice(1).toLowerCase();
+
+    // Verificar se a votação existe
     const votingRef = ref(
       database,
       `meetings/${meetingId}/votings/${votingId}`
@@ -515,34 +539,67 @@ const registerVoteInMeeting = async (meetingId, votingId, option, userId) => {
     const votingData = votingSnapshot.val();
 
     // Verificar se a votação está ativa
-    if (!votingData.active || votingData.endTime < Date.now()) {
-      throw new Error("Esta votação foi encerrada");
+    if (!votingData.active) {
+      throw new Error("Esta votação já foi encerrada");
     }
 
     // Verificar se o usuário já votou
-    const voterRef = ref(
-      database,
-      `meetings/${meetingId}/votings/${votingId}/voters/${userId}`
-    );
-    const voterSnapshot = await get(voterRef);
-
-    if (voterSnapshot.exists()) {
+    if (votingData.voters && votingData.voters[userId]) {
       throw new Error("Você já votou nesta votação");
+    }
+
+    // Verificar se a opção normalizada existe nas opções disponíveis
+    let originalOption = normalizedOption;
+    let optionExists = false;
+
+    if (votingData.options) {
+      // Comparar com opções normalizadas
+      for (const opt of Object.keys(votingData.options)) {
+        const normalizedOpt =
+          opt.trim().charAt(0).toUpperCase() +
+          opt.trim().slice(1).toLowerCase();
+        if (normalizedOpt === normalizedOption) {
+          originalOption = opt; // Usar a opção original do banco
+          optionExists = true;
+          break;
+        }
+      }
+    }
+
+    if (!optionExists) {
+      // Se a opção não existir, vamos criá-la
+      console.log(`Criando nova opção de voto: ${normalizedOption}`);
+      originalOption = normalizedOption;
+
+      // Verificar se é possível adicionar a opção (apenas se for opção personalizada)
+      const optionsRef = ref(
+        database,
+        `meetings/${meetingId}/votings/${votingId}/options`
+      );
+      await update(optionsRef, {
+        [normalizedOption]: 0,
+      });
     }
 
     // Incrementar contagem da opção
     const optionRef = ref(
       database,
-      `meetings/${meetingId}/votings/${votingId}/options/${option}`
+      `meetings/${meetingId}/votings/${votingId}/options/${originalOption}`
     );
     const optionSnapshot = await get(optionRef);
     const currentVotes = optionSnapshot.exists() ? optionSnapshot.val() : 0;
 
-    // Registrar voto
-    await update(ref(database, `meetings/${meetingId}/votings/${votingId}`), {
-      [`options/${option}`]: currentVotes + 1,
-      [`voters/${userId}`]: true,
-    });
+    // Registrar voto e timestamp
+    const updates = {};
+    updates[`options/${originalOption}`] = currentVotes + 1;
+    updates[`voters/${userId}`] = true;
+    updates[`votes/${userId}`] = originalOption; // Registrar a opção escolhida
+    updates[`voteTimestamps/${userId}`] = Date.now(); // Registrar timestamp para ordenação
+
+    await update(
+      ref(database, `meetings/${meetingId}/votings/${votingId}`),
+      updates
+    );
 
     return true;
   } catch (error) {
@@ -843,6 +900,33 @@ const getUserArchivedMeetings = async (userId) => {
   }
 };
 
+// Função para listar todas as senhas (para debug)
+const listAllPasswords = async () => {
+  try {
+    const passwordsRef = ref(database, "passwords");
+    const snapshot = await get(passwordsRef);
+
+    if (!snapshot.exists()) {
+      console.log("Nenhuma senha registrada");
+      return [];
+    }
+
+    const passwords = [];
+    snapshot.forEach((childSnapshot) => {
+      passwords.push({
+        password: childSnapshot.key,
+        data: childSnapshot.val(),
+      });
+    });
+
+    console.log("Senhas disponíveis:", passwords);
+    return passwords;
+  } catch (error) {
+    console.error("Erro ao listar senhas:", error);
+    return [];
+  }
+};
+
 // Exportar todos os objetos/funções no final do arquivo
 export {
   app,
@@ -870,6 +954,7 @@ export {
   unarchiveMeeting,
   deleteMeeting,
   getUserArchivedMeetings,
+  listAllPasswords,
 };
 
 export default app;

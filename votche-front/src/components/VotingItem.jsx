@@ -6,20 +6,21 @@ import {
   FaChartBar,
   FaStop,
   FaCheck,
-  FaLock,
   FaUserSecret,
 } from "react-icons/fa";
-import "../styles/VotingItem.css"; // CSS específico para o componente
+import "../styles/VotingItem.css";
 
 function VotingItem({
   id,
   meetingId,
   title,
   isActive,
-  isAnonymous = false, // Nova propriedade para indicar se a votação é anônima
+  isAnonymous = false,
   onEndVoting,
   totalVotes = 0,
   onVote,
+  isOwner = false,
+  options = [], // Adicionar esta prop
 }) {
   const navigate = useNavigate();
   const [tempSelectedOption, setTempSelectedOption] = useState(null);
@@ -42,7 +43,6 @@ function VotingItem({
   };
 
   const handleViewReport = () => {
-    // Navegar para o dashboard de relatórios com o ID da votação específica
     navigate(`/reports?meetingId=${meetingId}&votingId=${id}`);
   };
 
@@ -64,35 +64,19 @@ function VotingItem({
 
       <div className="voting-body">
         <div className="voting-options">
-          <button
-            className={`vote-option-btn ${
-              tempSelectedOption === "concordo" ? "temp-selected" : ""
-            } ${selectedOption === "concordo" ? "selected" : ""}`}
-            onClick={() => handleSelectOption("concordo")}
-            disabled={voted}
-          >
-            Concordo
-          </button>
-
-          <button
-            className={`vote-option-btn ${
-              tempSelectedOption === "discordo" ? "temp-selected" : ""
-            } ${selectedOption === "discordo" ? "selected" : ""}`}
-            onClick={() => handleSelectOption("discordo")}
-            disabled={voted}
-          >
-            Discordo
-          </button>
-
-          <button
-            className={`vote-option-btn ${
-              tempSelectedOption === "abstenho" ? "temp-selected" : ""
-            } ${selectedOption === "abstenho" ? "selected" : ""}`}
-            onClick={() => handleSelectOption("abstenho")}
-            disabled={voted}
-          >
-            Me abstenho
-          </button>
+          {/* Renderizar as opções dinamicamente */}
+          {options.map((option) => (
+            <button
+              key={option}
+              className={`vote-option-btn ${
+                tempSelectedOption === option ? "temp-selected" : ""
+              } ${selectedOption === option ? "selected" : ""}`}
+              onClick={() => handleSelectOption(option)}
+              disabled={voted}
+            >
+              {option}
+            </button>
+          ))}
 
           {tempSelectedOption && !voted && (
             <button className="confirm-vote-btn" onClick={handleConfirmVote}>
@@ -109,9 +93,14 @@ function VotingItem({
         </div>
 
         <div className="action-buttons">
-          <button className="action-btn btn-danger" onClick={onEndVoting}>
-            <FaStop /> Encerrar Votação
-          </button>
+          {isOwner && isActive && (
+            <button
+              className="action-btn btn-danger"
+              onClick={() => onEndVoting(id)}
+            >
+              <FaStop /> Encerrar Votação
+            </button>
+          )}
 
           <button className="action-btn btn-success" onClick={handleViewReport}>
             <FaChartBar /> Ver Relatório
@@ -133,6 +122,7 @@ function VotingsList() {
         isActive={true}
         onEndVoting={() => console.log("Encerrar votação")}
         onViewDetails={() => console.log("Ver detalhes")}
+        options={["Concordo", "Discordo", "Me abstenho"]} // Passar as opções aqui
       />
 
       <VotingItem
@@ -140,6 +130,7 @@ function VotingsList() {
         isActive={true}
         onEndVoting={() => console.log("Encerrar votação")}
         onViewDetails={() => console.log("Ver detalhes")}
+        options={["Sim", "Não", "Talvez"]} // Exemplo de outras opções
       />
     </div>
   );

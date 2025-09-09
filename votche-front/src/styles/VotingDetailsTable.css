@@ -1,0 +1,246 @@
+/* Estilos para a seção de detalhes dos votantes no ReportDashboard */
+.voting-details-container {
+  margin-top: 28px;
+  border-top: 1px solid #e9ecef;
+  padding-top: 20px;
+  width: 100%; /* Garantir que use toda a largura disponível */
+}
+
+.details-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #343a40;
+}
+
+.voting-details-data {
+  background-color: #ffffff;
+  border-radius: 10px;
+  padding: 0;
+  margin-top: 15px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  width: 100%; /* Usar toda a largura disponível */
+}
+
+.toggle-details-btn {
+  background: none;
+  border: none;
+  color: #495057;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.toggle-details-btn:hover {
+  background-color: #f8f9fa;
+  color: #212529;
+}
+
+.toggle-details-btn svg {
+  transition: transform 0.3s;
+}
+
+.toggle-details-btn.expanded svg {
+  transform: rotate(180deg);
+}
+
+/* Estilizações para tabelas de votantes */
+.voting-details-table {
+  width: 100%;
+  max-width: 100%;
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  background: #fff;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.voting-details-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.voting-details-table th,
+.voting-details-table td {
+  padding: 10px;
+  text-align: left;
+}
+
+.details-header {
+  padding: 15px;
+  border-bottom: 1px solid #eee;
+}
+
+.option-section {
+  margin-bottom: 20px;
+  width: 100%;
+  border: 1px solid #eaeaea;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.option-section:last-child {
+  margin-bottom: 0;
+}
+
+.option-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 15px;
+  font-weight: 500;
+  color: #fff;
+}
+
+/* Cores para opções personalizadas */
+.option-header.positivo {
+  background-color: #4caf50;
+}
+
+.option-header.negativo {
+  background-color: #f44336;
+}
+
+.option-header.neutro {
+  background-color: #ff9800;
+}
+
+.option-header.alternativo {
+  background-color: #2196f3;
+}
+
+/* Cor de fallback para outras opções */
+.option-header.outro {
+  background-color: #9c27b0;
+}
+
+.vote-count {
+  font-size: 0.9em;
+  opacity: 0.9;
+  background-color: rgba(0, 0, 0, 0.06);
+  padding: 3px 10px;
+  border-radius: 16px;
+  color: #495057;
+  font-weight: 500;
+}
+
+.voters-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.voters-table th {
+  padding: 12px 15px;
+  text-align: left;
+  background-color: #f9f9f9;
+  border-bottom: 1px solid #eaeaea;
+  font-weight: 500;
+}
+
+.voters-table td {
+  padding: 12px 15px;
+  border-bottom: 1px solid #eaeaea;
+}
+
+.voter-row:last-child td {
+  border-bottom: none;
+}
+
+.voter-row:hover {
+  background-color: #f8f9fa;
+}
+
+.voter-name {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.voter-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: #e0e0e0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.voter-email {
+  color: #6c757d;
+  font-size: 13px;
+}
+
+.vote-timestamp {
+  font-size: 13px;
+  color: #6c757d;
+  white-space: nowrap;
+}
+
+.vote-option {
+  font-weight: 500;
+}
+
+.no-voters {
+  padding: 15px;
+  text-align: center;
+  color: #666;
+  background-color: #f8f8f8;
+  border-radius: 0 0 10px 10px;
+}
+
+/* Garantindo que a tabela de detalhes ocupe toda a largura disponível */
+.voting-report-container {
+  width: 100%;
+}
+
+/* Design responsivo */
+@media (max-width: 768px) {
+  .voters-table th,
+  .voters-table td {
+    padding: 10px 12px;
+  }
+
+  .option-header {
+    padding: 10px 12px;
+  }
+
+  /* Ajustes para mobile */
+  .voters-table th:nth-child(2),
+  .voters-table td:nth-child(2) {
+    display: none; /* Esconde o email em telas pequenas */
+  }
+
+  .voters-table th:nth-child(1),
+  .voters-table td:nth-child(1) {
+    width: 60%; /* Nome ocupa 60% em mobile */
+  }
+
+  .voters-table th:nth-child(3),
+  .voters-table td:nth-child(3) {
+    width: 40%; /* Data ocupa 40% em mobile */
+  }
+}
+
+/* Garantir que a tabela ocupe todo o espaço disponível horizontalmente */
+@media (min-width: 768px) {
+  .voting-details-table,
+  .option-section,
+  .voters-table {
+    width: 100%;
+    max-width: 100%;
+  }
+}
+

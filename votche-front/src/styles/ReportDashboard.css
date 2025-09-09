@@ -614,6 +614,22 @@
   }
 }
 
+/* Garantindo que a tabela de detalhes ocupe toda a largura disponível */
+.voting-report-container {
+  width: 100%;
+}
+
+.voting-details-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+}
+
+.voting-details-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
 /* Responsividade */
 @media (max-width: 768px) {
   .voting-results {

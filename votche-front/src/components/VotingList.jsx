@@ -17,6 +17,7 @@ const VotingList = ({
   onVote,
   onEndVoting,
   onCreateVoting,
+  participants = {},
 }) => {
   const [selectedOptions, setSelectedOptions] = useState({});
 
@@ -28,26 +29,20 @@ const VotingList = ({
     onVote(votingId, option);
   };
 
-  const calculatePercentage = (votes, total) => {
-    if (!total) return 0;
-    return Math.round((votes / total) * 100);
-  };
-
   const getTotalVotes = (options) => {
-    return Object.values(options).reduce((sum, votes) => sum + votes, 0);
+    return Object.values(options || {}).reduce((sum, votes) => sum + votes, 0);
   };
 
   return (
     <div className="votings-container">
       <div className="votings-header">
-       
+        <h3>Votações</h3>
         {isOwner && (
-          <button className="new-vote-btn" onClick={onCreateVoting}>
+          <button className="create-voting-btn" onClick={onCreateVoting}>
             <FaPlus /> Nova Votação
           </button>
         )}
       </div>
-
 
       {votings.length === 0 ? (
         <div className="empty-state">
@@ -59,19 +54,23 @@ const VotingList = ({
           {votings.map((voting) => {
             const isActive = voting.active;
             const totalVotes = getTotalVotes(voting.options);
-            const userVoted =
-              voting.votes &&
-              Object.values(voting.votes).includes(selectedOptions[voting.id]);
+            const votingOptions = voting.options
+              ? Object.keys(voting.options)
+              : [];
 
             return (
               <VotingItem
                 key={voting.id}
+                id={voting.id}
+                meetingId={voting.meetingId}
                 title={voting.title}
                 isActive={isActive}
-                onEndVoting={() => onEndVoting(voting.id)}
-                onViewDetails={() =>
-                  console.log(`Ver detalhes: ${voting.title}`)
-                }
+                isAnonymous={voting.anonymous}
+                onEndVoting={onEndVoting}
+                totalVotes={totalVotes}
+                onVote={(option) => handleVote(voting.id, option)}
+                isOwner={isOwner}
+                options={votingOptions} // Passar as opções
               />
             );
           })}
