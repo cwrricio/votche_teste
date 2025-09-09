@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./styles/LandingPage.css";
 import votcheLogo from "../assets/votche.png";
@@ -27,10 +27,13 @@ import {
   FaFacebook,
   FaLinkedin,
   FaArrowUp,
+  FaBars, // Adicionado ícone de menu hambúrguer
+  FaTimes, // Adicionado ícone para fechar
 } from "react-icons/fa";
 
 function LandingPage() {
   const navigate = useNavigate();
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const handleEnterApp = () => {
     navigate("/app");
@@ -40,22 +43,79 @@ function LandingPage() {
     navigate("/");
   };
 
+  const toggleMenu = () => {
+    setMenuOpen(!menuOpen);
+  };
+
+  const closeMenu = () => {
+    setMenuOpen(false);
+  };
+
+  // Controla a rolagem do body quando o menu está aberto
+  useEffect(() => {
+    if (menuOpen) {
+      document.body.classList.add("menu-open");
+    } else {
+      document.body.classList.remove("menu-open");
+    }
+
+    // Cleanup ao desmontar
+    return () => {
+      document.body.classList.remove("menu-open");
+    };
+  }, [menuOpen]);
+
+  // Dentro da função LandingPage, adicione esta função para rolagem suave:
+  const scrollToSection = (sectionId) => {
+    const section = document.getElementById(sectionId);
+    if (section) {
+      section.scrollIntoView({ behavior: "smooth" });
+      closeMenu();
+    }
+  };
+
   return (
     <div className="landing-container">
       <header className="landing-header">
         <div className="logo-container" onClick={handleLogoClick}>
           <img src={votcheLogo} alt="Votchê" className="landing-logo-img" />
         </div>
+
+        {/* Menu de navegação principal - visível em desktops */}
         <nav className="landing-nav">
           <ul>
             <li>
-              <a href="#sobre">Sobre</a>
+              <a
+                href="#sobre"
+                onClick={(e) => {
+                  e.preventDefault();
+                  scrollToSection("sobre");
+                }}
+              >
+                Sobre
+              </a>
             </li>
             <li>
-              <a href="#como-funciona">Como funciona</a>
+              <a
+                href="#como-funciona"
+                onClick={(e) => {
+                  e.preventDefault();
+                  scrollToSection("como-funciona");
+                }}
+              >
+                Como funciona
+              </a>
             </li>
             <li>
-              <a href="#contato">Contato</a>
+              <a
+                href="#contato-section"
+                onClick={(e) => {
+                  e.preventDefault();
+                  scrollToSection("contato-section");
+                }}
+              >
+                Contato
+              </a>
             </li>
             <li>
               <button className="enter-button" onClick={handleEnterApp}>
@@ -64,7 +124,68 @@ function LandingPage() {
             </li>
           </ul>
         </nav>
+
+        {/* Botão do menu hambúrguer - visível apenas em telas pequenas */}
+        <div className="mobile-menu-toggle" onClick={toggleMenu}>
+          {menuOpen ? <FaTimes /> : <FaBars />}
+        </div>
       </header>
+
+      {/* Menu de navegação SEPARADO e FORA do header */}
+      <div className={`mobile-menu-wrapper ${menuOpen ? "open" : ""}`}>
+        <nav className="landing-nav">
+          <ul>
+            <li className="enter-button-li">
+              <button className="enter-button" onClick={handleEnterApp}>
+                Entrar
+              </button>
+            </li>
+            <li>
+              <a
+                href="#sobre"
+                onClick={(e) => {
+                  e.preventDefault();
+                  scrollToSection("sobre");
+                  closeMenu();
+                }}
+              >
+                Sobre
+              </a>
+            </li>
+            <li>
+              <a
+                href="#como-funciona"
+                onClick={(e) => {
+                  e.preventDefault();
+                  scrollToSection("como-funciona");
+                  closeMenu();
+                }}
+              >
+                Como funciona
+              </a>
+            </li>
+            <li>
+              <a
+                href="#contato-section"
+                onClick={(e) => {
+                  e.preventDefault();
+                  scrollToSection("contato-section");
+                  closeMenu();
+                }}
+              >
+                Contato
+              </a>
+            </li>
+            
+          </ul>
+        </nav>
+      </div>
+
+      {/* Overlay SEPARADO e fora de qualquer container */}
+      <div
+        className={`menu-overlay ${menuOpen ? "open" : ""}`}
+        onClick={closeMenu}
+      ></div>
 
       <main className="landing-main">
         <div className="hero-container">
@@ -297,7 +418,7 @@ function LandingPage() {
       </section>
 
       {/* Footer com cores do RS e informações do sistema - Versão atualizada */}
-      <footer className="landing-footer">
+      <footer className="landing-footer" id="contato-section">
         <div className="footer-top">
           <div className="footer-column">
             <img src={votcheLogo} alt="Votchê" className="footer-logo-img" />
@@ -307,7 +428,6 @@ function LandingPage() {
             </p>
           </div>
           <div className="footer-column">
-            
             <ul className="footer-nav-list">
               <li>
                 <a href="#sobre">Sobre</a>
@@ -330,7 +450,6 @@ function LandingPage() {
             <h4>Contato</h4>
             <p>votche@gmail.com</p>
             <p>(55) 55996370515</p>
-            
           </div>
         </div>
         <div className="footer-bottom">

@@ -25,13 +25,11 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1.2rem 4rem; /* Aumentei o padding para mais espaço */
-  background-color: #ffffff;
-  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.03);
-  position: sticky;
-  top: 0;
+  padding: 1rem 2rem;
+  background-color: white;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  position: relative;
   z-index: 100;
-  width: 100%;
 }
 
 .logo-container {
@@ -54,6 +52,7 @@
 .landing-nav {
   display: flex;
   align-items: center;
+  z-index: 1000; /* Aumentar o z-index para ficar acima do overlay */
 }
 
 .landing-nav ul {
@@ -1087,4 +1086,203 @@ ul.details-list {
 .social-icons {
   justify-content: flex-end;
 }
- 
+
+/* Adicione estas regras ao final do arquivo LandingPage.css */
+
+/* Menu hambúrguer */
+.mobile-menu-toggle {
+  display: none;
+  cursor: pointer;
+  font-size: 1.5rem;
+  color: #333;
+  z-index: 1001; /* Alto para ficar clicável */
+}
+
+/* Estrutura do overlay */
+.menu-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 998; /* ABAIXO do menu */
+}
+
+.menu-overlay.open {
+  display: block;
+}
+
+/* Wrapper do menu mobile - contém a navegação */
+.mobile-menu-wrapper {
+  position: fixed;
+  top: 0;
+  right: -280px; /* Fora da tela */
+  width: 250px;
+  height: 100vh;
+  background: white;
+  z-index: 999; /* ACIMA do overlay */
+  transition: right 0.3s ease;
+  box-shadow: -5px 0 15px rgba(0, 0, 0, 0.2);
+  overflow-y: auto;
+}
+
+.mobile-menu-wrapper.open {
+  right: 0; /* Visível na tela */
+}
+
+/* Navegação mobile */
+@media (max-width: 768px) {
+  .mobile-menu-toggle {
+    display: block;
+    margin-left: auto;
+  }
+
+  .landing-nav {
+    width: 100%;
+    height: 100%;
+    padding-top: 60px;
+    padding-bottom: 30px;
+  }
+
+  .landing-nav ul {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    padding: 0 1.5rem;
+    margin: 0;
+  }
+
+  .landing-nav li {
+    width: 100%;
+    margin: 8px 0;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 8px;
+  }
+
+  .landing-nav li:last-child {
+    border-bottom: none;
+  }
+
+  .landing-nav a {
+    display: block;
+    width: 100%;
+    padding: 12px 0;
+    text-align: center;
+    font-size: 1.1rem;
+    color: #333;
+  }
+
+  /* Botão Entrar */
+  .enter-button-li {
+    margin-top: 25px !important;
+    padding-top: 15px !important;
+    border-top: 1px solid #eee !important;
+  }
+
+  .enter-button {
+    width: 100%;
+    padding: 12px;
+    font-size: 1.1rem;
+  }
+
+  /* Esconder o menu de desktop em telas pequenas */
+  .landing-header .landing-nav {
+    display: none;
+  }
+}
+
+/* Esconder elementos do menu mobile em telas grandes */
+@media (min-width: 769px) {
+  .mobile-menu-wrapper,
+  .menu-overlay {
+    display: none !important;
+  }
+}
+
+/* Menu principal para desktop */
+.landing-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  background-color: white;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  position: relative;
+  z-index: 100;
+}
+
+/* Menu de navegação principal - visível em telas grandes */
+.landing-header .landing-nav {
+  display: block; /* Garante que seja visível em telas grandes */
+}
+
+.landing-header .landing-nav ul {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.landing-header .landing-nav li {
+  margin: 0;
+}
+
+.landing-header .landing-nav a {
+  color: #333;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 1rem;
+  position: relative;
+  padding: 0.5rem 0;
+  transition: color 0.3s ease;
+}
+
+.landing-header .landing-nav a:hover {
+  color: #00a151;
+}
+
+.landing-header .landing-nav .enter-button {
+  background-color: #00a151;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 0.7rem 1.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.landing-header .landing-nav .enter-button:hover {
+  background-color: #008543;
+}
+
+/* Esconder elementos do menu mobile em telas grandes */
+@media (min-width: 769px) {
+  .mobile-menu-wrapper,
+  .menu-overlay {
+    display: none !important;
+  }
+}
+
+/* Ajustes para dispositivos móveis */
+@media (max-width: 768px) {
+  /* Esconder o menu de navegação principal em telas pequenas */
+  .landing-header .landing-nav {
+    display: none;
+  }
+
+  /* Mostrar botão hambúrguer em telas pequenas */
+  .mobile-menu-toggle {
+    display: block;
+    margin-left: auto;
+  }
+
+  /* Estilização do menu mobile conforme implementado anteriormente */
+  .mobile-menu-wrapper {
+    /* Seus estilos existentes */
+  }
+}
