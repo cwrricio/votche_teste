@@ -3,7 +3,7 @@
   margin-top: 28px;
   border-top: 1px solid #e9ecef;
   padding-top: 20px;
-  width: 100%; /* Garantir que use toda a largura disponível */
+  width: 150%; /* Garantir que use toda a largura disponível */
 }
 
 .details-title {
@@ -102,26 +102,47 @@
   color: #fff;
 }
 
-/* Cores para opções personalizadas */
+/* Cores aprimoradas para cabeçalhos de opções padrão */
+.option-header.concordo {
+  background-color: #28a745;
+  color: white;
+}
+
+.option-header.discordo {
+  background-color: #dc3545;
+  color: white;
+}
+
+.option-header.me-abstenho {
+  background-color: #6c757d;
+  color: white;
+}
+
+/* Cores aprimoradas para opções personalizadas */
 .option-header.positivo {
-  background-color: #4caf50;
+  background-color: #087f5b;
+  color: white;
 }
 
 .option-header.negativo {
-  background-color: #f44336;
+  background-color: #e63946;
+  color: white;
 }
 
 .option-header.neutro {
-  background-color: #ff9800;
+  background-color: #fd7e14;
+  color: white;
 }
 
 .option-header.alternativo {
-  background-color: #2196f3;
+  background-color: #1a73e8;
+  color: white;
 }
 
-/* Cor de fallback para outras opções */
+/* Cores para outras opções personalizadas com melhor contraste */
 .option-header.outro {
-  background-color: #9c27b0;
+  background-color: #8e44ad;
+  color: white;
 }
 
 .vote-count {
@@ -140,11 +161,15 @@
 }
 
 .voters-table th {
-  padding: 12px 15px;
+  padding: 14px 15px;
   text-align: left;
-  background-color: #f9f9f9;
-  border-bottom: 1px solid #eaeaea;
-  font-weight: 500;
+  background-color: #f3f4f6;
+  border-bottom: 2px solid #e9ecef;
+  font-weight: 600;
+  color: #495057;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .voters-table td {
@@ -167,15 +192,18 @@
 }
 
 .voter-avatar {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
-  background-color: #e0e0e0;
+  background-color: #e9ecef;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 500;
+  font-weight: 600;
   font-size: 14px;
+  color: #495057;
+  border: 2px solid #dee2e6;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .voter-email {
@@ -194,11 +222,13 @@
 }
 
 .no-voters {
-  padding: 15px;
+  padding: 18px;
   text-align: center;
-  color: #666;
-  background-color: #f8f8f8;
-  border-radius: 0 0 10px 10px;
+  color: #6c757d;
+  background-color: #f8f9fa;
+  border-radius: 0 0 4px 4px;
+  font-style: italic;
+  border-top: 1px solid #e9ecef;
 }
 
 /* Garantindo que a tabela de detalhes ocupe toda a largura disponível */
@@ -244,3 +274,136 @@
   }
 }
 
+/* Estilos para exibição do tipo de voto */
+.vote-type {
+  display: inline-block;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-align: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  transition: transform 0.1s ease;
+}
+
+.vote-type:hover {
+  transform: translateY(-1px);
+}
+
+/* Cores melhoradas para os badges de voto */
+.vote-type.concordo {
+  background-color: #d4edda;
+  color: #0a5a29;
+  border: 1px solid #c3e6cb;
+}
+
+.vote-type.discordo {
+  background-color: #f8d7da;
+  color: #842029;
+  border: 1px solid #f5c2c7;
+}
+
+.vote-type.me-abstenho {
+  background-color: #e9ecef;
+  color: #41464b;
+  border: 1px solid #dee2e6;
+}
+
+/* Cores melhoradas para as opções personalizadas */
+.vote-type.positivo {
+  background-color: #d0f4de;
+  color: #087f5b;
+  border: 1px solid #b2edd1;
+}
+
+.vote-type.negativo {
+  background-color: #ffccd5;
+  color: #c71f37;
+  border: 1px solid #ffb3c0;
+}
+
+.vote-type.neutro {
+  background-color: #fff3cd;
+  color: #997404;
+  border: 1px solid #ffecb5;
+}
+
+.vote-type.alternativo {
+  background-color: #cfe2ff;
+  color: #084298;
+  border: 1px solid #b6d4fe;
+}
+
+.vote-type.outro {
+  background-color: #e9d8fd;
+  color: #6b21a8;
+  border: 1px solid #dbc3f8;
+}
+
+/* Melhorar a aparência do avatar do votante */
+.voter-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-color: #e9ecef;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 14px;
+  color: #495057;
+  border: 2px solid #dee2e6;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Melhorar a estilização das linhas da tabela */
+.voters-table tr:nth-child(even) {
+  background-color: #f8f9fa;
+}
+
+.voters-table tr:hover {
+  background-color: #f0f7ff;
+}
+
+/* Melhorar o estilo para o contador de votos no cabeçalho */
+.vote-count {
+  font-size: 0.85em;
+  background-color: rgba(255, 255, 255, 0.25);
+  padding: 3px 12px;
+  border-radius: 20px;
+  color: rgba(255, 255, 255, 0.95);
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+/* Estilo para tabela quando não há votos */
+.no-voters {
+  padding: 18px;
+  text-align: center;
+  color: #6c757d;
+  background-color: #f8f9fa;
+  border-radius: 0 0 4px 4px;
+  font-style: italic;
+  border-top: 1px solid #e9ecef;
+}
+
+/* Melhorar o estilo do cabeçalho da tabela */
+.voters-table th {
+  padding: 14px 15px;
+  text-align: left;
+  background-color: #f3f4f6;
+  border-bottom: 2px solid #e9ecef;
+  font-weight: 600;
+  color: #495057;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Melhorar a visualização do timestamp */
+.voter-time {
+  display: flex;
+  align-items: center;
+  color: #6c757d;
+  font-size: 0.9rem;
+}

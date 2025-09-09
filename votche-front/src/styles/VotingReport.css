@@ -126,6 +126,7 @@
 
 .voters-table .voter-row td {
   vertical-align: middle;
+  padding: 12px 15px;
 }
 
 .section-title {
@@ -166,4 +167,80 @@
   font-style: italic;
   background-color: #f8f9fa;
   border-radius: 4px;
+}
+
+/* Estilos para exibição do tipo de voto */
+.vote-type {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 15px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.vote-agree {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.vote-disagree {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.vote-abstain {
+  background-color: #e2e3e5;
+  color: #383d41;
+}
+
+/* Ajuste na linha do votante para acomodar o tipo de voto */
+.voters-table .voter-row td {
+  vertical-align: middle;
+  padding: 12px 15px;
+}
+
+/* Ajuste para centralizar a coluna de tipo de voto */
+.voters-table .vote-type-column {
+  text-align: center;
+}
+
+/* Ajuste para o avatar e nome na tabela */
+.voter-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.voter-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: #e9ecef;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: #6c757d;
+  font-weight: 500;
+}
+
+/* Tooltip para mostrar detalhes adicionais do voto */
+.vote-tooltip {
+  position: relative;
+  cursor: help;
+}
+
+.vote-tooltip:hover::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 125%;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #333;
+  color: white;
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+  z-index: 10;
 }
