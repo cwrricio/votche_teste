@@ -157,21 +157,17 @@
 /* Hero Section - Texto com mais destaque */
 .hero-container {
   display: flex;
-  flex-direction: row;
   align-items: center;
-  width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 2rem;
-  gap: 3rem;
-  min-height: 70vh; /* Definir uma altura mínima menor que antes */
-  max-height: 85vh; /* Limitar a altura máxima */
+  justify-content: space-between;
+  min-height: 500px;
+  padding: 4rem 2rem;
+  gap: 2rem;
 }
 
 .hero-text {
-  flex: 1.2; /* Manter proporção do texto */
-  text-align: left;
-  padding-right: 1rem;
+  flex: 1;
+  padding-right: 2rem;
+  max-width: 600px;
 }
 
 .hero-text h1 {
@@ -197,202 +193,239 @@
 .hero-image {
   flex: 1;
   display: flex;
+  align-items: center;
   justify-content: flex-end;
-  align-items: flex-start; /* Alinhar ao topo */
-  margin-top: -40px; /* Mover imagem para cima */
+  max-width: 550px;
 }
 
-/* Ajustes na imagem */
 .hero-image img {
-  max-width: 120%;
+  max-width: 100%;
   height: auto;
-  border-radius: 0;
-  box-shadow: none;
-  filter: drop-shadow(0 5px 20px rgba(0, 0, 0, 0.15));
-  margin-right: -40px;
+  object-fit: contain; /* Impede que a imagem seja cortada */
+  border-radius: 0; /* removido */
+  box-shadow: none; /* removido */
+  background: transparent; /* garantir transparência */
 }
 
-/* Ajustes responsivos */
-@media (max-width: 992px) {
-  .hero-text h1,
-  .hero-text h2 {
-    font-size: 3.2rem;
+/* Ajustes para a seção Sobre */
+.about-section {
+  background-color: #f8f9fa;
+  padding: 1rem 0;
+}
+
+.about-content {
+  display: flex;
+  justify-content: space-between;
+  gap: 4rem;
+  margin: 3rem 0;
+}
+
+.about-text-content {
+  flex: 1;
+  max-width: 600px;
+}
+
+.about-visual-content {
+  flex: 1;
+  max-width: 500px;
+}
+
+.results-chart {
+  background-color: white;
+  border-radius: 8px;
+  padding: 2rem;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+}
+
+/* Ajustes para a seção Como funciona */
+.process-banner.rs-colors {
+  display: flex;
+  justify-content: space-between;
+  align-items: stretch;
+  background: linear-gradient(
+    to right,
+    #00a151 0%,
+    #00a151 33.3%,
+    #e20019 33.3%,
+    #e20019 66.6%,
+    #ffcc00 66.6%,
+    #ffcc00 100%
+  );
+  padding: 3.5rem 3rem;
+  border-radius: 12px;
+  margin: 4rem 0;
+  position: relative;
+}
+
+.process-step {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  color: white;
+  position: relative;
+  padding: 0 1.5rem;
+}
+
+/* Media queries para responsividade */
+@media (max-width: 1024px) {
+  .hero-container {
+    padding: 3rem 2rem;
   }
 
-  .hero-image {
-    margin-top: -20px; /* Menos deslocamento em telas menores */
+  .hero-text {
+    padding-right: 1rem;
   }
 
-  .about-container {
-    gap: 2rem;
-  }
-
-  .about-text h2 {
-    font-size: 2.4rem;
-  }
-
-  .device.laptop {
-    width: 250px;
-    height: 170px;
-  }
-
-  .device.mobile {
-    width: 100px;
-    height: 180px;
+  .about-content {
+    gap: 3rem;
   }
 
   .process-banner.rs-colors {
-    padding: 2.5rem 1rem;
-  }
-
-  .step-number {
-    width: 50px;
-    height: 50px;
-    font-size: 1.5rem;
-  }
-
-  .step-icon-container {
-    width: 50px;
-    height: 50px;
-  }
-
-  .step-icon {
-    font-size: 1.5rem;
-  }
-
-  .chart-container {
-    padding: 15px;
-  }
-
-  .chart-label {
-    width: 70px;
-    font-size: 0.9rem;
+    padding: 3rem 2rem;
   }
 }
 
 @media (max-width: 768px) {
+  /* Hero section em telas médias */
   .hero-container {
     flex-direction: column;
-    gap: 2rem;
+    padding: 3rem 1.5rem;
+    text-align: center;
   }
 
   .hero-text {
-    text-align: center;
     padding-right: 0;
-  }
-
-  .hero-text h1,
-  .hero-text h2 {
-    font-size: 2.8rem;
+    max-width: 100%;
   }
 
   .hero-image {
+    max-width: 100%;
     justify-content: center;
-    margin-top: 0; /* Remover deslocamento em telas pequenas */
+    margin-top: 2rem;
   }
 
   .hero-image img {
-    max-width: 100%;
-    margin-right: 0;
+    max-height: 400px; /* Limita altura em telas médias */
+    max-width: 90%;
   }
 
-  .landing-logo-img {
-    height: 36px; /* Logo menor em telas pequenas */
-  }
-
-  .about-container {
+  /* Seção Sobre em telas médias */
+  .about-content {
     flex-direction: column;
+    gap: 2.5rem;
   }
 
-  .about-text {
-    padding-right: 0;
-    text-align: center;
+  .about-text-content,
+  .about-visual-content {
+    max-width: 100%;
   }
 
-  .features-list li {
-    justify-content: center;
-  }
-
-  .about-visual {
-    height: 300px;
-  }
-
-  .device.laptop {
-    transform: translate(-50%, -60%);
-  }
-
-  .chart-container {
-    padding: 15px;
-  }
-
-  .chart-label {
-    width: 70px;
-    font-size: 0.9rem;
-  }
-
+  /* Como funciona em telas médias */
   .process-banner.rs-colors {
     flex-direction: column;
-    gap: 3rem;
-    background: linear-gradient(
-      to bottom,
-      #009c3b 0%,
-      #009c3b 33.3%,
-      #e4002b 33.3%,
-      #e4002b 66.6%,
-      #ffcc29 66.6%,
-      #ffcc29 100%
-    );
-    padding: 3rem 1.5rem;
+    padding: 0;
+    background: none; /* Remove o gradiente horizontal */
+    margin: 2rem 0;
   }
 
-  .process-step {
-    margin-bottom: 1.5rem;
-    padding-bottom: 1.5rem;
-    max-width: 300px;
-    margin-left: auto;
-    margin-right: auto;
+  /* Aplica cores individuais para cada etapa */
+  .process-step:nth-child(1) {
+    background-color: #00a151;
+    border-radius: 12px 12px 0 0;
+    padding: 2.5rem 1.5rem;
   }
 
-  .process-step:last-child {
-    margin-bottom: 0;
-    padding-bottom: 0;
+  .process-step:nth-child(2) {
+    background-color: #e20019;
+    padding: 2.5rem 1.5rem;
+  }
+
+  .process-step:nth-child(3) {
+    background-color: #ffcc00;
+    border-radius: 0 0 12px 12px;
+    padding: 2.5rem 1.5rem;
   }
 
   .step-arrow {
     top: auto;
     right: auto;
-    bottom: -30px;
+    bottom: -10px; /* Posiciona a seta no final do bloco */
     left: 50%;
-    transform: translateX(-50%) rotate(90deg);
-    width: 30px;
+    transform: translateX(-50%) rotate(90deg); /* Rotaciona para apontar para baixo */
+    z-index: 10;
   }
 
-  .how-works-details {
-    flex-direction: column;
-    gap: 3rem;
+  /* Lista de características */
+  .highlighted .details-list {
+    grid-template-columns: 1fr;
+    gap: 1.2rem;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Hero section em telas pequenas */
+  .hero-container {
+    padding: 2.5rem 1rem;
   }
 
-  .vote-interface-mockup {
-    max-width: 350px;
-    padding: 25px;
+  .hero-text h1,
+  .hero-text h2 {
+    font-size: 2rem;
   }
 
-  .details-content h3 {
-    text-align: center;
+  .hero-subtitle {
+    font-size: 1rem;
+  }
+
+  .cta-button {
+    width: 100%;
+    padding: 0.8rem 1.5rem;
+  }
+
+  .hero-image img {
+    max-height: 300px; /* Altura ainda menor em telas muito pequenas */
+  }
+
+  /* Como funciona em telas pequenas */
+  .process-step {
+    padding: 2rem 1rem;
+  }
+
+  .step-icon-main {
+    width: 60px;
+    height: 60px;
     font-size: 1.8rem;
   }
 
-  .details-list li {
-    margin-bottom: 1.2rem;
+  .step-content h3 {
+    font-size: 1.4rem;
+    margin-top: 1rem;
+  }
+
+  .step-content p {
+    font-size: 0.9rem;
+  }
+
+  /* Seção destacada em telas pequenas */
+  .how-works-details.highlighted {
+    padding: 2rem 1rem;
+  }
+
+  .highlighted .centered-title {
+    font-size: 1.6rem;
   }
 
   .check-icon {
-    width: 30px;
-    height: 30px;
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    font-size: 0.9rem;
   }
 
   .details-list li p {
-    font-size: 1.05rem;
+    font-size: 0.9rem;
   }
 }
 
@@ -661,6 +694,7 @@
 .process-banner.rs-colors {
   display: flex;
   justify-content: space-between;
+  align-items: stretch;
   background: linear-gradient(
     to right,
     #00a151 0%,
@@ -670,7 +704,6 @@
     #ffcc00 66.66%,
     /* Amarelo mais vibrante */ #ffcc00 100%
   );
-  border-radius: 20px;
   padding: 4rem 2rem;
   margin-bottom: 4rem;
   color: white;
@@ -1260,29 +1293,219 @@ ul.details-list {
   background-color: #008543;
 }
 
-/* Esconder elementos do menu mobile em telas grandes */
-@media (min-width: 769px) {
-  .mobile-menu-wrapper,
-  .menu-overlay {
+/* ===== MOBILE FIXES: SOBRE & COMO FUNCIONA ===== */
+
+/* até tablet */
+@media (max-width: 768px) {
+  /* respiro e contenção lateral */
+  .section-wrapper {
+    padding: 0 1.25rem;
+  }
+
+  /* --- SOBRE --- */
+  .about-section {
+    padding: 3rem 0 3.5rem;
+  }
+  .about-content {
+    flex-direction: column;
+    gap: 1.75rem;
+    align-items: stretch;
+    margin-bottom: 2.25rem;
+  }
+  .about-text-content p {
+    font-size: 1.05rem;
+    line-height: 1.6;
+  }
+  .about-visual-content {
+    max-width: 100%;
+    width: 100%;
+  }
+  .results-chart {
+    padding: 1.25rem;
+    border-radius: 12px;
+    margin: 0 auto;
+  }
+  .chart-body {
+    gap: 12px;
+  }
+  .chart-label {
+    width: 70px;
+    font-size: 0.95rem;
+  }
+  .chart-bar {
+    height: 22px;
+  }
+  .chart-fill {
+    font-size: 0.9rem;
+  }
+
+  /* --- COMO FUNCIONA --- */
+  .how-works-section {
+    padding: 3rem 0;
+  }
+  .how-works-section .section-header {
+    margin-bottom: 1.25rem;
+  }
+
+  /* empilha os passos e remove o gradiente horizontal */
+  .process-banner.rs-colors {
+    flex-direction: column;
+    background: none;
+    padding: 0;
+    margin: 1.5rem 0 2rem;
+    box-shadow: none;
+    overflow: visible;
+  }
+
+  .process-step {
+    width: 100%;
+    padding: 1.75rem 1.25rem;
+    margin: 0 0 10px;
+    border-radius: 12px;
+    color: #fff;
+  }
+  .process-step:nth-child(1) {
+    background: #00a151;
+  }
+  .process-step:nth-child(2) {
+    background: #e20019;
+  }
+  .process-step:nth-child(3) {
+    background: #ffcc00;
+    margin-bottom: 0;
+  }
+
+  .step-icon-main {
+    width: 64px;
+    height: 64px;
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+  }
+  .step-content h3 {
+    font-size: 1.25rem;
+  }
+  .step-content p {
+    font-size: 0.95rem;
+    line-height: 1.5;
+  }
+
+  /* setas ficam confusas no empilhado – some no mobile */
+  .step-arrow {
     display: none !important;
+  }
+
+  /* bloco de bullets (garante 1 coluna no mobile mesmo com regras duplicadas) */
+  .how-works-details.highlighted {
+    padding: 1.75rem 1.25rem;
+    margin-top: 2rem;
+  }
+  .highlighted .centered-title {
+    font-size: 1.5rem;
+    margin-bottom: 1.25rem;
+  }
+  .highlighted .details-list {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+  }
+  .highlighted .check-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 1.1rem;
+    border-radius: 8px;
+    margin-right: 12px;
+  }
+  .highlighted .details-list li p {
+    font-size: 0.95rem;
   }
 }
 
-/* Ajustes para dispositivos móveis */
-@media (max-width: 768px) {
-  /* Esconder o menu de navegação principal em telas pequenas */
-  .landing-header .landing-nav {
-    display: none;
+/* celulares pequenos */
+@media (max-width: 480px) {
+  /* título compacto */
+  .section-header h2 {
+    font-size: 2rem !important;
   }
 
-  /* Mostrar botão hambúrguer em telas pequenas */
+  /* gráficos do "Sobre" ainda mais legíveis */
+  .chart-label {
+    width: 60px;
+    font-size: 0.85rem;
+  }
+  .chart-bar {
+    height: 18px;
+  }
+  .chart-fill {
+    font-size: 0.8rem;
+    padding: 0 8px;
+  }
+
+  .how-works-section .section-header {
+    margin-bottom: 1rem;
+  }
+}
+
+/* Navegação em telas pequenas - esconder opções no header */
+@media (max-width: 768px) {
+  /* Esconder COMPLETAMENTE a navegação no header em telas pequenas */
+  .landing-header .landing-nav {
+    display: none !important;
+  }
+
+  /* Garantir que o botão hambúrguer seja visível */
   .mobile-menu-toggle {
     display: block;
     margin-left: auto;
   }
 
-  /* Estilização do menu mobile conforme implementado anteriormente */
-  .mobile-menu-wrapper {
-    /* Seus estilos existentes */
+  /* Garantir que as opções do menu mobile estejam visíveis */
+  .mobile-menu-wrapper.open .landing-nav {
+    display: block !important;
+    padding-top: 60px;
+  }
+}
+
+/* Correção para features grid em dispositivos móveis */
+@media (max-width: 768px) {
+  /* Forçar layout em coluna para os cards de recursos */
+  .features-grid {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 1.5rem !important;
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Ajustar cada feature card */
+  .feature-card {
+    width: 100% !important;
+    margin-bottom: 1rem;
+  }
+
+  /* Garantir espaçamento adequado */
+  .feature-card:not(:last-child) {
+    margin-bottom: 0.5rem;
+  }
+}
+
+/* Ajuste específico para telas muito pequenas */
+@media (max-width: 480px) {
+  .feature-card {
+    padding: 1.5rem 1.2rem;
+  }
+
+  .feature-icon-wrap {
+    width: 60px;
+    height: 60px;
+    margin-bottom: 1rem;
+  }
+
+  .feature-content h3 {
+    font-size: 1.2rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .feature-content p {
+    font-size: 0.9rem;
+    line-height: 1.4;
   }
 }
