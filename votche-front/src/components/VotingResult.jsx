@@ -3,8 +3,25 @@ import { FaUserTie } from "react-icons/fa";
 import MinervaVoteModal from "./MinervaVoteModal";
 import "../styles/VotingResult.css";
 
-const VotingResult = ({ stats, voting, isOwner, votingId, onMinervaVote }) => {
+const VotingResult = ({
+  stats,
+  voting,
+  isOwner,
+  votingId,
+  onMinervaVote,
+  meetingId,
+}) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Log para debug - adicione temporariamente
+  console.log("VotingResult props:", {
+    isTie: stats.isTie,
+    isOwner,
+    hasMinervaVote: voting?.hasMinervaVote === true,
+    winners: stats.winners,
+    meetingId: meetingId || "AUSENTE", // Verificar se meetingId está presente
+    votingId: votingId || "AUSENTE", // Verificar se votingId está presente
+  });
 
   // Se não há votos, não mostrar nada
   if (stats.total === 0) {
@@ -26,7 +43,9 @@ const VotingResult = ({ stats, voting, isOwner, votingId, onMinervaVote }) => {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         options={stats.winners || []}
-        onConfirm={(selectedOption) => onMinervaVote(votingId, selectedOption)}
+        onConfirm={(selectedOption) =>
+          onMinervaVote(meetingId, votingId, selectedOption)
+        }
       />
 
       {/* Exibir resultado final após voto de minerva */}
@@ -37,9 +56,6 @@ const VotingResult = ({ stats, voting, isOwner, votingId, onMinervaVote }) => {
           </div>
           <div className="minerva-winner-option">
             <strong>{minervaOption}</strong>
-            <span className="minerva-badge">
-              <FaUserTie /> Voto de Minerva
-            </span>
           </div>
         </div>
       ) : stats.isTie ? (
@@ -60,7 +76,7 @@ const VotingResult = ({ stats, voting, isOwner, votingId, onMinervaVote }) => {
           </ul>
 
           {/* Substituir o accordion por um botão simples "Desempatar" */}
-          {isOwner && (
+          {stats.isTie && isOwner && !voting.hasMinervaVote && (
             <div className="minerva-action">
               <button
                 className="minerva-vote-btn"

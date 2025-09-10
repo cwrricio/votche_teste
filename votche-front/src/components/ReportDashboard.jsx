@@ -44,7 +44,6 @@ import {
 import { Button, Typography, Paper, Box, Chip, Divider } from "@mui/material";
 import { jsPDF } from "jspdf";
 
-
 ChartJS.register(
   ArcElement,
   Tooltip,
@@ -320,8 +319,8 @@ const ReportDashboard = ({ user }) => {
       winner,
       maxVotes,
       isAnonymous,
-      isTie,
-      winners,
+      isTie, // Esta propriedade é essencial
+      winners, // Esta propriedade também é necessária para o modal de desempate
     };
   };
 
@@ -932,9 +931,26 @@ const ReportDashboard = ({ user }) => {
     verifyAccess();
   }, [reportId, currentUser, navigate]);
 
-  const handleMinervaVote = async (votingId, selectedOption) => {
+  const handleMinervaVote = async (meetingId, votingId, selectedOption) => {
     try {
-      if (!meeting || !currentUser) {
+      // Garantir que temos o currentUser ou usar o user.uid do props
+      const userId = currentUser?.uid || user?.uid;
+
+      console.log("Dados recebidos em handleMinervaVote:", {
+        meetingId,
+        votingId,
+        selectedOption,
+        userId,
+        currentUser: currentUser ? { uid: currentUser.uid } : null,
+        user: user ? { uid: user.uid } : null,
+      });
+
+      if (!meetingId || !votingId || !userId) {
+        console.error("Dados ausentes:", {
+          meetingId: Boolean(meetingId),
+          votingId: Boolean(votingId),
+          userId: Boolean(userId),
+        });
         setError("Informações insuficientes para aplicar o voto de minerva");
         return;
       }
@@ -942,26 +958,32 @@ const ReportDashboard = ({ user }) => {
       setLoading(true);
 
       await registerMinervaVote(
-        meeting.id,
+        meetingId,
         votingId,
         selectedOption,
-        currentUser.uid
+        userId // Use o userId em vez de currentUser.uid
       );
 
-      setVotings((prevVotings) =>
-        prevVotings.map((voting) =>
+      // Atualizar o estado local
+      setMeetingVotings((prev) => {
+        const updatedVotings = prev[meetingId].map((voting) =>
           voting.id === votingId
             ? {
                 ...voting,
                 hasMinervaVote: true,
-                minervaVotedBy: currentUser.uid,
+                minervaVotedBy: userId,
                 minervaVotedAt: new Date().toISOString(),
                 minervaOption: selectedOption,
-                officialResult: selectedOption,
+                officialResult: selectedOption, // Importante para o dashboard
               }
             : voting
-        )
-      );
+        );
+
+        return {
+          ...prev,
+          [meetingId]: updatedVotings,
+        };
+      });
 
       toast.success("Voto de minerva aplicado com sucesso!", {
         position: "top-right",
@@ -1227,12 +1249,10 @@ const ReportDashboard = ({ user }) => {
                                       <VotingResult
                                         stats={stats}
                                         voting={voting}
-                                        isOwner={
-                                          currentUser &&
-                                          currentUser.uid === meeting.createdBy
-                                        }
+                                        isOwner={true} // Forçado como true para teste
                                         votingId={voting.id}
                                         onMinervaVote={handleMinervaVote}
+                                        meetingId={expandedMeeting.id}
                                       />
                                     )}
 

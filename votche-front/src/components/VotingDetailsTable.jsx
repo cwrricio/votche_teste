@@ -738,6 +738,38 @@ const VotingDetailsTable = ({
             });
           }
 
+          // Resultado após voto de minerva
+          if (voting.hasMinervaVote) {
+            pdf.setFontSize(12);
+            pdf.setFont("helvetica", "bold");
+            pdf.text(
+              `Resultado após voto de minerva: ${
+                voting.minervaOption || voting.officialResult
+              }`,
+              14,
+              y
+            );
+            y += 8;
+
+            // Se você quiser incluir quem aplicou o voto de minerva
+            if (
+              voting.minervaVotedBy &&
+              expandedMeeting.participants?.[voting.minervaVotedBy]
+            ) {
+              pdf.setFontSize(10);
+              pdf.setFont("helvetica", "italic");
+              pdf.text(
+                `Voto de minerva dado por: ${
+                  expandedMeeting.participants[voting.minervaVotedBy].name ||
+                  "Usuário"
+                }`,
+                14,
+                y
+              );
+              y += 8;
+            }
+          }
+
           // Separador entre votações
           y += 5;
           if (i < votings.length - 1) {

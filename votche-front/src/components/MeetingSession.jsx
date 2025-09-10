@@ -315,7 +315,12 @@ function MeetingSession({ user, onBack }) {
         ) : (
           <VotingList
             votings={votings}
-            isOwner={isOwner}
+            isOwner={Boolean(
+              user &&
+                meeting &&
+                meeting.createdBy &&
+                user.uid === meeting.createdBy
+            )}
             onVote={handleVote}
             onEndVoting={handleEndVotingClick}
             onCreateVoting={() => setShowCreateVoting(true)}
