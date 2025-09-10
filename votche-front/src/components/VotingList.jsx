@@ -53,10 +53,13 @@ const VotingList = ({
         <div className="voting-list">
           {votings.map((voting) => {
             const isActive = voting.active;
-            const totalVotes = getTotalVotes(voting.options);
-            const votingOptions = voting.options
-              ? Object.keys(voting.options)
-              : [];
+            const totalVotes = getTotalVotes(
+              voting.options
+                ? Object.fromEntries(
+                  Object.entries(voting.options).map(([k, v]) => [k, v.count ?? 0])
+                )
+                : {}
+            );
             const votingType = voting.votingType || "single";
 
             return (
@@ -72,7 +75,7 @@ const VotingList = ({
                 totalVotes={totalVotes}
                 onVote={(option) => handleVote(voting.id, option)}
                 isOwner={isOwner}
-                options={votingOptions}
+                options={voting.options || {}}
                 votingType={votingType}
               />
             );

@@ -21,7 +21,7 @@ function VotingItem({
   totalVotes = 0,
   onVote,
   isOwner = false,
-  options = {}, // agora é objeto { chave: textoOriginal }
+  options = {}, // agora é objeto { chave: { text, count } }
   votingType = "single",
 }) {
   // Timer de contagem regressiva
@@ -53,7 +53,7 @@ function VotingItem({
   // Para single: string, para multi: array
   const [tempSelectedOption, setTempSelectedOption] = useState(votingType === "multi" ? [] : null);
   const [selectedOption, setSelectedOption] = useState(votingType === "multi" ? [] : null);
-  // Extrair lista de chaves e textos originais
+  // Extrair lista de chaves
   const optionKeys = Object.keys(options);
   const [voted, setVoted] = useState(false);
 
@@ -129,7 +129,7 @@ function VotingItem({
                   onChange={() => handleSelectOption(key)}
                   disabled={voted}
                 />{' '}
-                {options[key]}
+                {options[key]?.text || key}
               </label>
             ))
             : optionKeys.map((key) => (
@@ -139,7 +139,7 @@ function VotingItem({
                 onClick={() => handleSelectOption(key)}
                 disabled={voted}
               >
-                {options[key]}
+                {options[key]?.text || key}
               </button>
             ))}
 

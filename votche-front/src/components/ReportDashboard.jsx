@@ -255,52 +255,81 @@ const ReportDashboard = ({ user }) => {
 
   // Calcular estatísticas para uma votação
   const calculateVotingStats = (voting) => {
-    if (!voting) return { options: [], total: 0, winner: null, maxVotes: 0 };
+    // Log temporário para debug do formato de options
+    if (voting && voting.anonymous === true) {
+      // eslint-disable-next-line no-console
+      console.log('DEBUG voting.options:', voting.options);
+    }
+    if (!voting) return { options: [], total: 0, winner: null, maxVotes: 0, isAnonymous: false };
 
     // Verificar se é uma votação anônima
     const isAnonymous = voting.anonymous === true;
 
-    // Extrair opções e votos
     const options = [];
     let totalVotes = 0;
     let winner = null;
     let maxVotes = 0;
 
-    // Novo: contar votos considerando múltipla escolha
-    const optionCounts = {};
-    if (voting.options && typeof voting.options === "object") {
-      Object.keys(voting.options).forEach((option) => {
-        optionCounts[option] = 0;
-      });
-    }
-    if (voting.votes && typeof voting.votes === "object") {
-      Object.values(voting.votes).forEach((vote) => {
-        if (Array.isArray(vote)) {
-          // Votação múltipla
-          vote.forEach((opt) => {
-            if (optionCounts.hasOwnProperty(opt)) {
-              optionCounts[opt] += 1;
-            }
-          });
-        } else {
-          // Votação simples
-          if (optionCounts.hasOwnProperty(vote)) {
-            optionCounts[vote] += 1;
+    if (isAnonymous) {
+      // Votação anônima: pode ser objeto {opcao: {count, text}} ou array [{label, count}]
+      if (Array.isArray(voting.options)) {
+        voting.options.forEach((opt) => {
+          const label = opt.label || opt.text || opt.opcao || "Opção";
+          const voteCount = typeof opt.count === "number" ? opt.count : 0;
+          totalVotes += voteCount;
+          options.push({ label, votes: voteCount });
+          if (voteCount > maxVotes) {
+            maxVotes = voteCount;
+            winner = label;
           }
-        }
-      });
-    }
-    // Preencher array de opções para exibição
-    if (voting.options && typeof voting.options === "object") {
-      Object.keys(voting.options).forEach((option) => {
-        const voteCount = optionCounts[option] || 0;
-        totalVotes += voteCount;
-        options.push({ label: option, votes: voteCount });
-        if (voteCount > maxVotes) {
-          maxVotes = voteCount;
-          winner = option;
-        }
-      });
+        });
+      } else if (voting.options && typeof voting.options === "object") {
+        Object.entries(voting.options).forEach(([option, value]) => {
+          // value pode ser {count, text}
+          const voteCount = value && typeof value.count === "number" ? value.count : 0;
+          const label = value && value.text ? value.text : option;
+          totalVotes += voteCount;
+          options.push({ label, votes: voteCount });
+          if (voteCount > maxVotes) {
+            maxVotes = voteCount;
+            winner = label;
+          }
+        });
+      }
+    } else {
+      // Votação não anônima: contar votos normalmente
+      const optionCounts = {};
+      if (voting.options && typeof voting.options === "object") {
+        Object.keys(voting.options).forEach((option) => {
+          optionCounts[option] = 0;
+        });
+      }
+      if (voting.votes && typeof voting.votes === "object") {
+        Object.values(voting.votes).forEach((vote) => {
+          if (Array.isArray(vote)) {
+            vote.forEach((opt) => {
+              if (Object.prototype.hasOwnProperty.call(optionCounts, opt)) {
+                optionCounts[opt] += 1;
+              }
+            });
+          } else {
+            if (Object.prototype.hasOwnProperty.call(optionCounts, vote)) {
+              optionCounts[vote] += 1;
+            }
+          }
+        });
+      }
+      if (voting.options && typeof voting.options === "object") {
+        Object.keys(voting.options).forEach((option) => {
+          const voteCount = optionCounts[option] || 0;
+          totalVotes += voteCount;
+          options.push({ label: option, votes: voteCount });
+          if (voteCount > maxVotes) {
+            maxVotes = voteCount;
+            winner = option;
+          }
+        });
+      }
     }
 
     return { options, total: totalVotes, winner, maxVotes, isAnonymous };
@@ -738,6 +767,15 @@ const ReportDashboard = ({ user }) => {
           pdf.text(`Status: ${voting.active ? "Ativa" : "Concluída"}`, 20, y);
           y += 6;
 
+          // Indicação visual de votação anônima
+          if (stats.isAnonymous) {
+            pdf.setTextColor(200, 0, 0);
+            pdf.setFont("helvetica", "bold");
+            pdf.text("VOTAÇÃO ANÔNIMA", pageWidth - 60, y - 6);
+            pdf.setFont("helvetica", "normal");
+            pdf.setTextColor(...colors.textLight);
+          }
+
           pdf.text(`Total de votos: ${stats.total}`, 20, y);
           y += 6;
 
@@ -879,6 +917,13 @@ const ReportDashboard = ({ user }) => {
                 }
               }
             });
+          } else if (stats.isAnonymous) {
+            // Se votação anônima, mostrar mensagem explicativa
+            pdf.setFontSize(10);
+            pdf.setFont("helvetica", "italic");
+            pdf.setTextColor(...colors.textLight);
+            pdf.text("Votação anônima: não é possível exibir detalhes dos votantes.", 14, y);
+            y += 10;
           }
 
           // Separador entre votações

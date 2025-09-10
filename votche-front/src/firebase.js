@@ -481,15 +481,17 @@ const createVotingInMeeting = async (
     // Calcular tempo de término da votação
     const endTime = Date.now() + durationMinutes * 60 * 1000;
 
-    // Criar objeto de opções com contagem zero, normalizando todas as opções
+    // Montar objeto de opções: { chave: { text: textoOriginal, count: 0 } }
     const optionsObj = {};
-    options.forEach((option) => {
-      // Normalizar opção: primeira letra maiúscula, resto minúsculo
-      const normalizedOption =
-        option.trim().charAt(0).toUpperCase() +
-        option.trim().slice(1).toLowerCase();
-      optionsObj[normalizedOption] = 0;
+    Object.entries(options).forEach(([key, text]) => {
+      optionsObj[key] = { text, count: 0 };
     });
+
+    // Buscar se a reunião é anônima
+    let anonymous = false;
+    if (typeof meetingData.isAnonymous !== 'undefined') {
+      anonymous = meetingData.isAnonymous === true;
+    }
 
     // Referência para nova votação
     const votingRef = push(ref(database, `meetings/${meetingId}/votings`));
@@ -504,6 +506,7 @@ const createVotingInMeeting = async (
       endTime,
       active: true,
       votingType,
+      anonymous,
     });
 
     return {
@@ -537,8 +540,20 @@ const registerVoteInMeeting = async (meetingId, votingId, option, userId) => {
       throw new Error("Esta votação foi encerrada");
     }
 
-    // Verificar se o usuário já votou
-    if (votingData.voters && votingData.voters[userId]) {
+    // Buscar se a votação é anônima
+    // Preferir o campo da votação, se não existir, cair para o da reunião (retrocompatibilidade)
+    let isAnonymous = false;
+    if (typeof votingData.anonymous !== 'undefined') {
+      isAnonymous = votingData.anonymous === true;
+    } else {
+      const meetingRef = ref(database, `meetings/${meetingId}`);
+      const meetingSnapshot = await get(meetingRef);
+      const meetingData = meetingSnapshot.exists() ? meetingSnapshot.val() : {};
+      isAnonymous = meetingData.isAnonymous === true;
+    }
+
+    // Se não for anônima, impedir voto duplo
+    if (!isAnonymous && votingData.voters && votingData.voters[userId]) {
       throw new Error("Você já votou nesta votação");
     }
 
@@ -570,13 +585,13 @@ const registerVoteInMeeting = async (meetingId, votingId, option, userId) => {
         }
       }
       if (!optionExists) {
-        // Se a opção não existir, criar
+        // Se a opção não existir, criar com texto igual à chave
         const optionsRef = ref(
           database,
           `meetings/${meetingId}/votings/${votingId}/options`
         );
         await update(optionsRef, {
-          [normalizedOption]: 0,
+          [normalizedOption]: { text: normalizedOption, count: 0 },
         });
       }
       // Incrementar contagem
@@ -585,14 +600,26 @@ const registerVoteInMeeting = async (meetingId, votingId, option, userId) => {
         `meetings/${meetingId}/votings/${votingId}/options/${originalOption}`
       );
       const optionSnapshot = await get(optionRef);
-      const currentVotes = optionSnapshot.exists() ? optionSnapshot.val() : 0;
-      updates[`options/${originalOption}`] = currentVotes + 1;
+      let currentVotes = 0;
+      let text = originalOption;
+      if (optionSnapshot.exists()) {
+        const val = optionSnapshot.val();
+        if (typeof val === 'object' && val.count !== undefined) {
+          currentVotes = val.count;
+          text = val.text || originalOption;
+        } else if (typeof val === 'number') {
+          currentVotes = val;
+        }
+      }
+      updates[`options/${originalOption}`] = { text, count: currentVotes + 1 };
     }
 
-    // Registrar voto e timestamp
-    updates[`voters/${userId}`] = true;
-    updates[`votes/${userId}`] = isMulti ? normalizedOptions : normalizedOptions[0];
-    updates[`voteTimestamps/${userId}`] = Date.now();
+    // Se NÃO for anônima, registrar voto e timestamp do usuário
+    if (!isAnonymous) {
+      updates[`voters/${userId}`] = true;
+      updates[`votes/${userId}`] = isMulti ? normalizedOptions : normalizedOptions[0];
+      updates[`voteTimestamps/${userId}`] = Date.now();
+    }
 
     await update(
       ref(database, `meetings/${meetingId}/votings/${votingId}`),

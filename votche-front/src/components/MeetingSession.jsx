@@ -65,7 +65,7 @@ function MeetingSession({ user, onBack }) {
 
     // Escutar atualizações das votações
     const unsubscribeVotings = listenToVotingsInMeeting(meetingId, (data) => {
-      console.log("Votações recebidas:", data);
+      console.log("[MeetingSession] Votações recebidas do Firebase:", data);
       setVotings(data);
     });
 
@@ -148,10 +148,11 @@ function MeetingSession({ user, onBack }) {
 
     try {
       setIsCreatingVoting(true);
+      // Passar o objeto de opções completo para o backend
       await createVotingInMeeting(
         meetingId,
         formData.title.trim(),
-        Object.keys(formData.options),
+        formData.options, // Agora envia o objeto completo { chave: textoOriginal }
         Number(formData.duration),
         user.uid,
         formData.votingType || "single"
