@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useParams, useNavigate } from "react-router-dom";
 import { jsPDF } from "jspdf";
 import {
   FaCalendarAlt,
@@ -14,8 +14,20 @@ import {
   FaClock,
   FaUser,
   FaSearch,
+  FaArrowLeft,
 } from "react-icons/fa";
-import { getUserMeetings, listenToVotingsInMeeting } from "../firebase";
+import {
+  getUserMeetings,
+  getUserParticipatingMeetings, // Adicionar esta importação
+  listenToVotingsInMeeting,
+  getMeetingDetails,
+  getMeetingVotings,
+  checkReportAccess,
+} from "../firebase";
+// Corrigir a importação do contexto de autenticação
+import { useAuth } from "../context/AuthContext";
+// Adicionar a importação do VotingResultChart que acabamos de criar
+import VotingResultChart from "./VotingResultChart";
 import "../styles/ReportDashboard.css";
 import VotingDetailsTable from "./VotingDetailsTable";
 import {
@@ -27,7 +39,7 @@ import {
   LinearScale,
   BarElement,
 } from "chart.js";
-import { Pie } from "react-chartjs-2";
+import { Pie, Bar } from "react-chartjs-2";
 
 // Registre os componentes necessários
 ChartJS.register(
@@ -44,8 +56,14 @@ const ReportDashboard = ({ user }) => {
   const queryParams = new URLSearchParams(location.search);
   const focusMeetingId = queryParams.get("meetingId");
   const focusVotingId = queryParams.get("votingId");
+  const { reportId } = useParams();
+  const navigate = useNavigate();
+  const { currentUser } = useAuth();
 
+  // Estado inicial
   const [meetings, setMeetings] = useState([]);
+  const [selectedMeeting, setSelectedMeeting] = useState(null);
+  const [votings, setVotings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [expandedMeeting, setExpandedMeeting] = useState(null);
@@ -59,12 +77,30 @@ const ReportDashboard = ({ user }) => {
     const loadUserMeetings = async () => {
       try {
         setLoading(true);
-        const userMeetings = await getUserMeetings(user.uid);
-        setMeetings(userMeetings);
+
+        // Carregar reuniões que o usuário criou
+        const createdMeetings = await getUserMeetings(user.uid);
+
+        // Carregar reuniões que o usuário participa (incluindo encerradas)
+        const participatingMeetings = await getUserParticipatingMeetings(
+          user.uid
+        );
+
+        // Combinar as listas, removendo duplicados
+        const allMeetings = [...createdMeetings];
+
+        // Adicionar apenas reuniões participantes que não estão na lista de criadas
+        for (const meeting of participatingMeetings) {
+          if (!allMeetings.some((m) => m.id === meeting.id)) {
+            allMeetings.push(meeting);
+          }
+        }
+
+        setMeetings(allMeetings);
 
         // Expandir automaticamente a reunião se indicado na URL
         if (focusMeetingId) {
-          const targetMeeting = userMeetings.find(
+          const targetMeeting = allMeetings.find(
             (m) => m.id === focusMeetingId
           );
           if (targetMeeting) {
@@ -904,6 +940,100 @@ const ReportDashboard = ({ user }) => {
     }
   };
 
+  // Carregar dados do relatório se reportId estiver presente
+  useEffect(() => {
+    const loadReportData = async () => {
+      if (!currentUser || !reportId) return;
+
+      try {
+        setLoading(true);
+
+        // Verificar acesso
+        const userReportsRef = ref(
+          database,
+          `users/${currentUser.uid}/reportAccess/${reportId}`
+        );
+        const accessSnapshot = await get(userReportsRef);
+
+        if (!accessSnapshot.exists()) {
+          setError("Você não tem acesso a este relatório");
+          setLoading(false);
+          return;
+        }
+
+        // Carregar dados da reunião
+        const meetingData = await getMeetingDetails(reportId);
+        setMeeting(meetingData);
+
+        // Carregar votações
+        const votingsData = await getMeetingVotings(reportId);
+        setVotings(votingsData);
+      } catch (err) {
+        console.error("Erro ao carregar relatório:", err);
+        setError(
+          "Não foi possível carregar o relatório. Tente novamente mais tarde."
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadReportData();
+  }, [currentUser, reportId]);
+
+  // Verificação de acesso ao relatório se acessado via URL específica
+  useEffect(() => {
+    const verifyAccess = async () => {
+      if (reportId && currentUser) {
+        const hasAccess = await checkReportAccess(currentUser.uid, reportId);
+        if (!hasAccess) {
+          setError("Você não tem permissão para acessar este relatório");
+          navigate("/home");
+        }
+      }
+    };
+
+    verifyAccess();
+  }, [reportId, currentUser, navigate]);
+
+  // Verificações de segurança antes de renderizar
+  if (loading) {
+    return (
+      <div className="loading-container">
+        <div className="loading-spinner"></div>
+        <p>Carregando relatórios...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="error-container">
+        <p className="error-message">{error}</p>
+        <button
+          className="retry-button"
+          onClick={() => {
+            setError(null);
+            setLoading(true);
+            loadUserMeetings();
+          }}
+        >
+          Tentar novamente
+        </button>
+      </div>
+    );
+  }
+
+  if (meetings.length === 0) {
+    return (
+      <div className="empty-state">
+        <h3>Nenhum relatório disponível</h3>
+        <p>Você ainda não participou de nenhuma reunião com votações.</p>
+      </div>
+    );
+  }
+
+  // Resto do componente
   return (
     <div className="report-dashboard-container">
       <div className="dashboard-header">
@@ -926,254 +1056,341 @@ const ReportDashboard = ({ user }) => {
         </div>
       </div>
 
-      {loading ? (
-        <div className="loading-state">
-          <div className="loading-spinner"></div>
-          <p>Carregando reuniões...</p>
-        </div>
-      ) : error ? (
-        <div className="error-message">{error}</div>
-      ) : (
-        <>
-          <div className="meetings-carousel">
-            {filteredMeetings.length === 0 ? (
-              <div className="no-meetings-message">
-                <FaChartBar className="no-data-icon" />
-                <p>
-                  {searchTerm
-                    ? "Nenhuma reunião encontrada para sua busca"
-                    : "Você ainda não tem reuniões para gerar relatórios"}
-                </p>
-              </div>
-            ) : (
-              <>
-                <p className="section-title">
-                  Suas Reuniões <span>({filteredMeetings.length})</span>
-                </p>
+      <div className="meetings-carousel">
+        {filteredMeetings.length === 0 ? (
+          <div className="no-meetings-message">
+            <FaChartBar className="no-data-icon" />
+            <p>
+              {searchTerm
+                ? "Nenhuma reunião encontrada para sua busca"
+                : "Você ainda não tem reuniões para gerar relatórios"}
+            </p>
+          </div>
+        ) : (
+          <>
+            <p className="section-title">
+              Suas Reuniões <span>({filteredMeetings.length})</span>
+            </p>
 
-                <div className="meetings-list">
-                  {filteredMeetings.map((meeting) => {
-                    const status = getMeetingStatus(meeting);
-                    const isExpanded =
-                      expandedMeeting && expandedMeeting.id === meeting.id;
-                    const votings = meetingVotings[meeting.id] || [];
+            <div className="meetings-list">
+              {filteredMeetings.map((meeting) => {
+                const status = getMeetingStatus(meeting);
+                const isExpanded =
+                  expandedMeeting && expandedMeeting.id === meeting.id;
+                const votings = meetingVotings[meeting.id] || [];
 
-                    return (
-                      <div
-                        key={meeting.id}
-                        className={`meeting-report-card ${
-                          isExpanded ? "expanded" : ""
-                        }`}
-                      >
-                        <div
-                          className="meeting-card-header"
-                          onClick={() => toggleMeetingExpansion(meeting)}
-                        >
-                          <div className="meeting-card-info">
-                            <h3>{meeting.name}</h3>
-                            <div className="meeting-meta-info">
-                              <span
-                                className={`meeting-status ${status.class}`}
+                return (
+                  <div
+                    key={meeting.id}
+                    className={`meeting-report-card ${
+                      isExpanded ? "expanded" : ""
+                    }`}
+                  >
+                    <div
+                      className="meeting-card-header"
+                      onClick={() => toggleMeetingExpansion(meeting)}
+                    >
+                      <div className="meeting-card-info">
+                        <h3>{meeting.name}</h3>
+                        <div className="meeting-meta-info">
+                          <span className={`meeting-status ${status.class}`}>
+                            <FaClock /> {status.text}
+                          </span>
+                          <span className="meeting-date">
+                            <FaCalendarAlt />{" "}
+                            {formatDate(meeting.startDate, meeting.startTime)}
+                          </span>
+                          <span className="meeting-votings-count">
+                            <FaChartBar /> {votings.length} votação(ões)
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {isExpanded && (
+                      <div className="meeting-details-panel">
+                        <div className="meeting-stats">
+                          {/* Estatísticas melhoradas */}
+                          <div className="stat-card">
+                            <FaUsers className="stat-icon" />
+                            <div className="stat-content">
+                              <span className="stat-value">
+                                {meeting.participants
+                                  ? Object.keys(meeting.participants).length
+                                  : 0}
+                              </span>
+                              <span className="stat-label">Participantes</span>
+                            </div>
+                          </div>
+
+                          <div className="stat-card">
+                            <FaChartBar className="stat-icon" />
+                            <div className="stat-content">
+                              <span className="stat-value">
+                                {votings.length}
+                              </span>
+                              <span className="stat-label">Votações</span>
+                            </div>
+                          </div>
+
+                          <div className="stat-card">
+                            <FaCheckCircle className="stat-icon" />
+                            <div className="stat-content">
+                              <span className="stat-value">
+                                {votings.filter((v) => !v.active).length}
+                              </span>
+                              <span className="stat-label">Concluídas</span>
+                            </div>
+                          </div>
+
+                          <div className="stat-card">
+                            <FaDownload className="stat-icon" />
+                            <div className="stat-content">
+                              <button
+                                className="download-report-btn"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  downloadPDF(meeting);
+                                }}
+                                disabled={generatingPDF}
                               >
-                                <FaClock /> {status.text}
-                              </span>
-                              <span className="meeting-date">
-                                <FaCalendarAlt />{" "}
-                                {formatDate(
-                                  meeting.startDate,
-                                  meeting.startTime
-                                )}
-                              </span>
-                              <span className="meeting-votings-count">
-                                <FaChartBar /> {votings.length} votação(ões)
-                              </span>
+                                {generatingPDF ? "Gerando..." : "Baixar PDF"}
+                              </button>
                             </div>
                           </div>
                         </div>
 
-                        {isExpanded && (
-                          <div className="meeting-details-panel">
-                            <div className="meeting-stats">
-                              {/* Estatísticas melhoradas */}
-                              <div className="stat-card">
-                                <FaUsers className="stat-icon" />
-                                <div className="stat-content">
-                                  <span className="stat-value">
-                                    {meeting.participants
-                                      ? Object.keys(meeting.participants).length
-                                      : 0}
-                                  </span>
-                                  <span className="stat-label">
-                                    Participantes
-                                  </span>
-                                </div>
-                              </div>
-
-                              <div className="stat-card">
-                                <FaChartBar className="stat-icon" />
-                                <div className="stat-content">
-                                  <span className="stat-value">
-                                    {votings.length}
-                                  </span>
-                                  <span className="stat-label">Votações</span>
-                                </div>
-                              </div>
-
-                              <div className="stat-card">
-                                <FaCheckCircle className="stat-icon" />
-                                <div className="stat-content">
-                                  <span className="stat-value">
-                                    {votings.filter((v) => !v.active).length}
-                                  </span>
-                                  <span className="stat-label">Concluídas</span>
-                                </div>
-                              </div>
-
-                              <div className="stat-card">
-                                <FaDownload className="stat-icon" />
-                                <div className="stat-content">
-                                  <button
-                                    className="download-report-btn"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      downloadPDF(meeting);
-                                    }}
-                                    disabled={generatingPDF}
-                                  >
-                                    {generatingPDF
-                                      ? "Gerando..."
-                                      : "Baixar PDF"}
-                                  </button>
-                                </div>
-                              </div>
+                        {/* Lista de votações melhorada */}
+                        <div className="votings-list">
+                          {votings.length === 0 ? (
+                            <div className="no-votings-message">
+                              <p>
+                                Nenhuma votação encontrada para esta reunião
+                              </p>
                             </div>
+                          ) : (
+                            votings.map((voting) => {
+                              const stats = calculateVotingStats(voting);
+                              const isHighlighted = voting.id === focusVotingId;
 
-                            {/* Lista de votações melhorada */}
-                            <div className="votings-list">
-                              {votings.length === 0 ? (
-                                <div className="no-votings-message">
-                                  <p>
-                                    Nenhuma votação encontrada para esta reunião
-                                  </p>
-                                </div>
-                              ) : (
-                                votings.map((voting) => {
-                                  const stats = calculateVotingStats(voting);
-                                  const isHighlighted =
-                                    voting.id === focusVotingId;
-
-                                  return (
-                                    <div
-                                      key={voting.id}
-                                      id={`voting-${voting.id}`}
-                                      className={`voting-report-item ${
-                                        isHighlighted ? "highlight-voting" : ""
-                                      }`}
-                                    >
-                                      <div className="voting-header">
-                                        <h4>
-                                          {voting.title || "Votação sem título"}
-                                        </h4>
-                                        <div className="voting-meta">
-                                          <span
-                                            className={`voting-status ${
-                                              voting.active ? "active" : "ended"
-                                            }`}
-                                          >
-                                            {voting.active
-                                              ? "Ativa"
-                                              : "Encerrada"}
-                                          </span>
-                                          <span className="voting-votes">
-                                            {stats.total} voto(s)
-                                          </span>
-                                        </div>
-                                      </div>
-
-                                      <div className="voting-results">
-                                        {/* Gráfico usando a função renderChart */}
-                                        <div className="voting-chart">
-                                          {renderChart(stats, chartType)}
-                                        </div>
-
-                                        {/* Tabela de resultados melhorada */}
-                                        <div className="voting-options-table">
-                                          <table>
-                                            <thead>
-                                              <tr>
-                                                <th>Opção</th>
-                                                <th>Votos</th>
-                                                <th>%</th>
-                                              </tr>
-                                            </thead>
-                                            <tbody>
-                                              {stats.options.map(
-                                                (option, idx) => {
-                                                  const percentage =
-                                                    stats.total > 0
-                                                      ? Math.round(
-                                                          (option.votes /
-                                                            stats.total) *
-                                                            100
-                                                        )
-                                                      : 0;
-
-                                                  return (
-                                                    <tr
-                                                      key={idx}
-                                                      className={
-                                                        option.label ===
-                                                        stats.winner
-                                                          ? "winner"
-                                                          : ""
-                                                      }
-                                                    >
-                                                      <td>{option.label}</td>
-                                                      <td>{option.votes}</td>
-                                                      <td>{percentage}%</td>
-                                                    </tr>
-                                                  );
-                                                }
-                                              )}
-                                            </tbody>
-                                            {stats.total > 0 && (
-                                              <tfoot>
-                                                <tr>
-                                                  <td>Total</td>
-                                                  <td>{stats.total}</td>
-                                                  <td>100%</td>
-                                                </tr>
-                                              </tfoot>
-                                            )}
-                                          </table>
-                                        </div>
-
-                                        {/* Resto dos elementos do relatório */}
-                                        <div className="voting-report-container">
-                                          {/* Usar o componente VotingDetailsTable sem título adicional */}
-                                          <VotingDetailsTable
-                                            voting={voting}
-                                            participants={
-                                              meeting?.participants || {}
-                                            }
-                                          />
-                                        </div>
-                                      </div>
+                              return (
+                                <div
+                                  key={voting.id}
+                                  id={`voting-${voting.id}`}
+                                  className={`voting-report-item ${
+                                    isHighlighted ? "highlight-voting" : ""
+                                  }`}
+                                >
+                                  <div className="voting-header">
+                                    <h4>
+                                      {voting.title || "Votação sem título"}
+                                    </h4>
+                                    <div className="voting-meta">
+                                      <span
+                                        className={`voting-status ${
+                                          voting.active ? "active" : "ended"
+                                        }`}
+                                      >
+                                        {voting.active ? "Ativa" : "Encerrada"}
+                                      </span>
+                                      <span className="voting-votes">
+                                        {stats.total} voto(s)
+                                      </span>
                                     </div>
-                                  );
-                                })
-                              )}
-                            </div>
-                          </div>
-                        )}
+                                  </div>
+
+                                  <div className="voting-results">
+                                    {/* Gráfico usando a função renderChart */}
+                                    <div className="voting-chart">
+                                      {renderChart(stats, chartType)}
+                                    </div>
+
+                                    {/* Tabela de resultados melhorada */}
+                                    <div className="voting-options-table">
+                                      <table>
+                                        <thead>
+                                          <tr>
+                                            <th>Opção</th>
+                                            <th>Votos</th>
+                                            <th>%</th>
+                                          </tr>
+                                        </thead>
+                                        <tbody>
+                                          {stats.options.map((option, idx) => {
+                                            const percentage =
+                                              stats.total > 0
+                                                ? Math.round(
+                                                    (option.votes /
+                                                      stats.total) *
+                                                      100
+                                                  )
+                                                : 0;
+
+                                            return (
+                                              <tr
+                                                key={idx}
+                                                className={
+                                                  option.label === stats.winner
+                                                    ? "winner"
+                                                    : ""
+                                                }
+                                              >
+                                                <td>{option.label}</td>
+                                                <td>{option.votes}</td>
+                                                <td>{percentage}%</td>
+                                              </tr>
+                                            );
+                                          })}
+                                        </tbody>
+                                        {stats.total > 0 && (
+                                          <tfoot>
+                                            <tr>
+                                              <td>Total</td>
+                                              <td>{stats.total}</td>
+                                              <td>100%</td>
+                                            </tr>
+                                          </tfoot>
+                                        )}
+                                      </table>
+                                    </div>
+
+                                    {/* Resto dos elementos do relatório */}
+                                    <div className="voting-report-container">
+                                      {/* Usar o componente VotingDetailsTable sem título adicional */}
+                                      <VotingDetailsTable
+                                        voting={voting}
+                                        participants={
+                                          meeting?.participants || {}
+                                        }
+                                      />
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })
+                          )}
+                        </div>
                       </div>
-                    );
-                  })}
-                </div>
-              </>
-            )}
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Se reportId estiver presente, mostrar detalhes do relatório */}
+      {reportId && (
+        <div className="report-details-container">
+          <div className="report-header">
+            <Button
+              startIcon={<FaArrowLeft />}
+              onClick={() => navigate("/dashboard/reports")}
+              sx={{ mb: 2 }}
+            >
+              Voltar
+            </Button>
+            <Typography variant="h4" fontWeight="600">
+              Relatório: {meeting.name}
+            </Typography>
+            <Button
+              variant="outlined"
+              startIcon={<FaFileDownload />}
+              sx={{ ml: "auto" }}
+            >
+              Exportar PDF
+            </Button>
           </div>
-        </>
+
+          <Paper sx={{ p: 3, mb: 4, borderRadius: 2 }}>
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                mb: 2,
+              }}
+            >
+              <Typography variant="body1">
+                <strong>Data da reunião:</strong>{" "}
+                {new Date(meeting.createdAt).toLocaleDateString("pt-BR")}
+              </Typography>
+              <Chip
+                label={meeting.active ? "Reunião Ativa" : "Reunião Encerrada"}
+                color={meeting.active ? "success" : "default"}
+              />
+            </Box>
+
+            {meeting.description && (
+              <Typography variant="body2" paragraph>
+                {meeting.description}
+              </Typography>
+            )}
+          </Paper>
+
+          <Typography variant="h5" gutterBottom fontWeight="600">
+            Resultados das Votações
+          </Typography>
+
+          {votings.length === 0 ? (
+            <Paper
+              sx={{
+                p: 4,
+                textAlign: "center",
+                borderRadius: 2,
+                mb: 4,
+              }}
+            >
+              <Typography variant="body1">
+                Esta reunião não possui votações registradas.
+              </Typography>
+            </Paper>
+          ) : (
+            votings.map((voting, index) => (
+              <Paper
+                key={voting.id}
+                sx={{
+                  p: 3,
+                  mb: 3,
+                  borderRadius: 2,
+                  boxShadow: 1,
+                }}
+              >
+                <Typography
+                  variant="h6"
+                  fontWeight="bold"
+                  gutterBottom
+                  sx={{ mb: 2 }}
+                >
+                  {index + 1}. {voting.question}
+                </Typography>
+
+                <Box sx={{ my: 3 }}>
+                  <VotingResultChart voting={voting} />
+                </Box>
+
+                <Divider sx={{ my: 2 }} />
+
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    mt: 2,
+                  }}
+                >
+                  <Typography variant="body2" color="text.secondary">
+                    Total de votos:{" "}
+                    <strong>{Object.values(voting.votes || {}).length}</strong>
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Criada em:{" "}
+                    {new Date(voting.createdAt).toLocaleString("pt-BR")}
+                  </Typography>
+                </Box>
+              </Paper>
+            ))
+          )}
+        </div>
       )}
     </div>
   );

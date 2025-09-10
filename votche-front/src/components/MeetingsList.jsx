@@ -7,8 +7,10 @@ import {
   FaFolderOpen,
   FaPlus,
   FaKey,
+  FaChartBar,
 } from "react-icons/fa";
 import { getAllActiveMeetings } from "../firebase";
+import { useNavigate } from "react-router-dom";
 import "../styles/MeetingsList.css";
 
 function MeetingsList({
@@ -25,6 +27,8 @@ function MeetingsList({
   viewingArchived,
   onLogin,
 }) {
+  const navigate = useNavigate();
+
   // Estado para controlar a tab ativa
   const [activeTab, setActiveTab] = useState(
     user ? "created" : "participating"
@@ -195,21 +199,27 @@ function MeetingsList({
       )}
 
       {user && (
-        <div className="meetings-tabs">
-          <button
-            className={`tab-btn ${activeTab === "created" ? "active" : ""}`}
+        <div className="tabs-navigation">
+          <div
+            className={`tab-item ${activeTab === "created" ? "active" : ""}`}
             onClick={() => setActiveTab("created")}
+            role="button"
+            aria-selected={activeTab === "created"}
+            tabIndex={0}
           >
             Minhas Reuniões
-          </button>
-          <button
-            className={`tab-btn ${
+          </div>
+          <div
+            className={`tab-item ${
               activeTab === "participating" ? "active" : ""
             }`}
             onClick={() => setActiveTab("participating")}
+            role="button"
+            aria-selected={activeTab === "participating"}
+            tabIndex={0}
           >
             Participando
-          </button>
+          </div>
         </div>
       )}
 
@@ -223,7 +233,6 @@ function MeetingsList({
           {user && activeTab === "created" && meetings.created.length === 0 && (
             <div className="empty-state">
               <p>Você ainda não criou nenhuma reunião</p>
-              
             </div>
           )}
 
@@ -336,6 +345,7 @@ function MeetingsList({
                 const status = getMeetingStatus(meeting);
                 const isOwner = user && meeting.createdBy === user.uid;
 
+                // Adicionar estas definições para evitar o erro
                 const createdAt =
                   meeting.createdAt ||
                   (meeting.createdDate && meeting.createdTime
@@ -349,18 +359,19 @@ function MeetingsList({
 
                 return (
                   <div
-                    key={meeting.id}
                     className={`meeting-card ${
-                      !meeting.active
-                        ? "inactive"
-                        : meeting.active
-                        ? "active"
-                        : ""
+                      !meeting.active ? "meeting-ended" : ""
                     }`}
-                    onClick={() => onSelectMeeting(meeting)}
+                    key={meeting.id}
+                    onClick={() => handleSelectMeeting(meeting)}
                   >
                     <div className="meeting-card-content">
-                      <h3 className="meeting-name">{meeting.name}</h3>
+                      <h3 className="meeting-name">
+                        {meeting.name}
+                        {!meeting.active && (
+                          <span className="ended-badge">Encerrada</span>
+                        )}
+                      </h3>
 
                       <div className="meeting-date">
                         <FaCalendarAlt />
@@ -390,6 +401,19 @@ function MeetingsList({
                             {meeting.description}
                           </p>
                         </div>
+                      )}
+
+                      {/* Adicionar botão para visualização do relatório */}
+                      {!meeting.active && (
+                        <button
+                          className="view-report-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/report?meetingId=${meeting.id}`);
+                          }}
+                        >
+                          <FaChartBar /> Ver Relatório
+                        </button>
                       )}
                     </div>
 

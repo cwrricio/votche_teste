@@ -42,3 +42,36 @@
   font-size: 14px;
   text-align: center;
 }
+
+.meeting-report-section {
+  margin-top: 1.5rem;
+  padding: 1.2rem;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border-left: 4px solid #17a2b8;
+}
+
+.meeting-report-section h4 {
+  color: #17a2b8;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.view-report-button {
+  background-color: #17a2b8;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.view-report-button:hover {
+  background-color: #138496;
+}

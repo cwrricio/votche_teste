@@ -567,3 +567,101 @@
   box-shadow: none !important;
   transform: none !important;
 }
+
+/* Estilização para reuniões encerradas */
+.meeting-card.meeting-ended {
+  border-left: 4px solid #6c757d;
+  opacity: 0.9;
+}
+
+.meeting-card.meeting-ended:hover {
+  opacity: 1;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.ended-badge {
+  font-size: 0.75rem;
+  background: #6c757d;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 10px;
+  margin-left: 10px;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.view-report-btn {
+  background-color: #17a2b8;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.view-report-btn:hover {
+  background-color: #138496;
+}
+
+/* Melhorias nas abas de navegação */
+.tabs-navigation {
+  display: flex;
+  gap: 0;
+  margin-bottom: 1.5rem;
+  border-bottom: 2px solid #e9eef2;
+}
+
+.tab-item {
+  padding: 1rem 1.5rem;
+  font-weight: 600;
+  color: var(--text-medium, #6c757d);
+  position: relative;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+/* Estado Hover - feedback visual quando mouse passa por cima */
+.tab-item:hover {
+  color: var(--primary-color, #1ea34a);
+  background-color: rgba(30, 163, 74, 0.05);
+}
+
+/* Estado Active - feedback visual quando clica */
+.tab-item:active {
+  transform: translateY(1px);
+  color: var(--primary-dark, #0b6b2b);
+}
+
+.tab-item.active {
+  color: var(--primary-color, #1ea34a);
+  font-weight: 700;
+}
+
+.tab-item.active::after {
+  content: "";
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background-color: var(--primary-color, #1ea34a);
+  border-radius: 3px 3px 0 0;
+  animation: tabActivate 0.3s ease;
+}
+
+/* Animação para seleção de aba */
+@keyframes tabActivate {
+  0% {
+    width: 0;
+    left: 50%;
+  }
+  100% {
+    width: 100%;
+    left: 0;
+  }
+}

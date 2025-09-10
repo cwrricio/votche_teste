@@ -11,7 +11,7 @@ import {
 import CreateVotingForm from "./CreateVotingForm";
 import "../styles/MeetingSession.css";
 import VotingList from "./VotingList";
-import { FaCopy, FaCheck } from "react-icons/fa";
+import { FaCopy, FaCheck, FaTimes, FaPlus, FaMinus } from "react-icons/fa";
 // Importe o componente ConfirmModal
 import ConfirmModal from "./ConfirmModal";
 import { useParams } from "react-router-dom";
@@ -121,14 +121,11 @@ function MeetingSession({ user, onBack }) {
     setVotingOptions([...votingOptions, ""]);
   };
 
-  const handleRemoveOption = (index) => {
-    if (votingOptions.length <= 2) {
-      setError("Uma votação precisa ter pelo menos 2 opções");
-      return;
+  // Adicione ou modifique a função handleRemoveOption:
+  const handleRemoveOption = () => {
+    if (votingOptions.length > 2) {
+      setVotingOptions(votingOptions.slice(0, -1));
     }
-    const newOptions = [...votingOptions];
-    newOptions.splice(index, 1);
-    setVotingOptions(newOptions);
   };
 
   const handleOptionChange = (index, value) => {
@@ -347,6 +344,84 @@ function MeetingSession({ user, onBack }) {
         onConfirm={confirmEndVoting}
         onCancel={() => setShowEndVotingConfirm(false)}
       />
+
+      {/* Seção de criação de votação */}
+      {showCreateVoting && (
+        <div className="create-voting-section">
+          <h3>Criar Nova Votação</h3>
+          <div className="form-group">
+            <label htmlFor="votingTitle">Título da Votação</label>
+            <input
+              type="text"
+              id="votingTitle"
+              value={votingTitle}
+              onChange={(e) => setVotingTitle(e.target.value)}
+              placeholder="Digite o título da votação"
+              required
+            />
+          </div>
+
+          {/* Renderização das opções de votação */}
+          <div className="options-container">
+            {votingOptions.map((option, index) => (
+              <div key={index} className="option-input">
+                <input
+                  type="text"
+                  value={option}
+                  onChange={(e) => handleOptionChange(index, e.target.value)}
+                  placeholder={`Opção ${index + 1}`}
+                  required
+                />
+              </div>
+            ))}
+
+            <div className="options-action-buttons">
+              <button
+                type="button"
+                className="option-action-btn add-option-btn"
+                onClick={handleAddOption}
+              >
+                <FaPlus /> Adicionar Opção
+              </button>
+              <button
+                type="button"
+                className="option-action-btn remove-option-btn"
+                onClick={handleRemoveOption}
+                disabled={votingOptions.length <= 2}
+              >
+                <FaMinus /> Retirar Opção
+              </button>
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="votingDuration">Duração da Votação (minutos)</label>
+            <input
+              type="number"
+              id="votingDuration"
+              value={votingDuration}
+              onChange={(e) => setVotingDuration(e.target.value)}
+              min="1"
+              required
+            />
+          </div>
+
+          <button
+            className="create-voting-btn"
+            onClick={handleCreateVoting}
+            disabled={isCreatingVoting}
+          >
+            {isCreatingVoting ? "Criando..." : "Criar Votação"}
+          </button>
+
+          <button
+            className="cancel-voting-btn"
+            onClick={() => setShowCreateVoting(false)}
+          >
+            <FaTimes /> Cancelar
+          </button>
+        </div>
+      )}
     </div>
   );
 }

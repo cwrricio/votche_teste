@@ -1,6 +1,6 @@
 // Melhorar o componente VotingSession e adicionar relatório
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Box,
   Typography,
@@ -36,14 +36,16 @@ import { PieChart } from "@mui/x-charts/PieChart";
 import { BarChart } from "@mui/x-charts/BarChart";
 import { doc, updateDoc, onSnapshot } from "firebase/firestore";
 import { db } from "../firebase";
+import { FaChartBar } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
 
 const VotingSession = ({ voting, meetingId, currentUser }) => {
   const [loading, setLoading] = useState(true);
   const [selectedOption, setSelectedOption] = useState("");
-  const [hasVoted, setHasVoted] = useState(false);
   const [votingData, setVotingData] = useState(null);
   const [error, setError] = useState("");
   const [showReport, setShowReport] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!voting || !meetingId) return;
@@ -56,14 +58,6 @@ const VotingSession = ({ voting, meetingId, currentUser }) => {
           const data = doc.data();
           setVotingData(data);
 
-          // Verifica se o usuário já votou
-          if (data.votes && data.votes[currentUser.uid]) {
-            setSelectedOption(data.votes[currentUser.uid]);
-            setHasVoted(true);
-          } else {
-            setHasVoted(false);
-            setSelectedOption("");
-          }
           setLoading(false);
         }
       },
@@ -92,7 +86,6 @@ const VotingSession = ({ voting, meetingId, currentUser }) => {
         [`votes.${currentUser.uid}`]: selectedOption,
       });
 
-      setHasVoted(true);
       setError("");
     } catch (error) {
       console.error("Erro ao votar:", error);
@@ -322,6 +315,11 @@ const VotingSession = ({ voting, meetingId, currentUser }) => {
     // Implementação futura - exportar para PDF usando jsPDF ou similar
   };
 
+  // Verificar se usuário votou
+  const hasVoted = useMemo(() => {
+    return voting?.votes && voting.votes[currentUser?.uid];
+  }, [voting, currentUser]);
+
   if (loading) {
     return (
       <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
@@ -350,15 +348,24 @@ const VotingSession = ({ voting, meetingId, currentUser }) => {
           />
           {hasVoted && <Chip label="Você votou" color="success" size="small" />}
 
-          {/* Botão de relatório */}
-          <Button
-            variant="outlined"
-            size="small"
-            onClick={() => setShowReport(true)}
-            sx={{ ml: "auto" }}
-          >
-            Ver Relatório Completo
-          </Button>
+          {/* Modificar esta condição para permitir acesso ao relatório */}
+          {/* Agora qualquer um que votou pode ver o relatório */}
+          {(hasVoted || votingData.createdBy === currentUser.uid) &&
+            !votingData.active && (
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={() =>
+                  navigate(
+                    `/report?meetingId=${meetingId}&votingId=${voting.id}`
+                  )
+                }
+                startIcon={<FaChartBar />}
+                sx={{ ml: "auto" }}
+              >
+                Ver Relatório
+              </Button>
+            )}
         </Box>
       </Box>
 

@@ -94,28 +94,28 @@ const CreateVotingForm = ({ onSubmit, onCancel }) => {
                 value={option}
                 onChange={(e) => handleOptionChange(index, e.target.value)}
                 placeholder={`Opção ${index + 1}`}
-                className="form-input"
                 required
               />
-              {options.length > 2 && (
-                <button
-                  type="button"
-                  className="remove-option"
-                  onClick={() => handleRemoveOption(index)}
-                >
-                  <FaTimes />
-                </button>
-              )}
             </div>
           ))}
 
-          <button
-            type="button"
-            className="add-option-btn"
-            onClick={handleAddOption}
-          >
-            <FaPlus /> Adicionar Opção
-          </button>
+          <div className="options-action-buttons">
+            <button
+              type="button"
+              className="option-action-btn add-option-btn"
+              onClick={handleAddOption}
+            >
+              <FaPlus /> Adicionar Opção
+            </button>
+            <button
+              type="button"
+              className="option-action-btn remove-option-btn"
+              onClick={() => handleRemoveOption(options.length - 1)}
+              disabled={options.length <= 2} // Desabilitar se tiver apenas 2 opções
+            >
+              <FaTimes /> Remover Opção
+            </button>
+          </div>
         </div>
 
         <div className="form-actions">

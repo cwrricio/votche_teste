@@ -269,50 +269,150 @@
   margin: 0 !important;
 }
 
-/* Melhor exibição do botão de excluir opção (x) — retirar fundo vermelho, usar ícone sutil */
+/* Remover o botão X vermelho existente */
 .remove-option {
-  background-color: transparent !important;
-  color: var(--danger-color, #e74c3c) !important;
-  border: 1px solid rgba(231, 76, 60, 0.12) !important;
-  width: 34px !important;
-  height: 34px !important;
-  display: inline-flex !important;
+  display: none !important;
+}
+
+/* Container para os botões de ação (adicionar/remover) */
+.options-action-buttons {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+/* Estilo base unificado para ambos os botões */
+.option-action-btn {
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+
+/* Botão adicionar opção */
+.add-option-btn {
+  background-color: rgba(30, 163, 74, 0.1);
+  color: var(--primary-color, #1ea34a);
+  border-color: var(--primary-color, #1ea34a);
+}
+
+.add-option-btn:hover {
+  background-color: rgba(30, 163, 74, 0.15);
+}
+
+/* Botão remover opção - com estilo consistente */
+.remove-option-btn {
+  background-color: rgba(231, 76, 60, 0.1);
+  color: #e74c3c;
+  border-color: #e74c3c;
+}
+
+.remove-option-btn:hover {
+  background-color: rgba(231, 76, 60, 0.15);
+}
+
+.remove-option-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: rgba(231, 76, 60, 0.05);
+}
+
+/* Ícones nos botões */
+.option-action-btn svg {
+  font-size: 0.85rem;
+}
+
+/* Melhorar layout das opções e posicionamento do botão remover */
+.option-input {
+  display: flex !important;
   align-items: center !important;
-  justify-content: center !important;
+  gap: 0.75rem !important;
+  margin-bottom: 0.75rem !important;
+  position: relative !important;
+}
+
+.option-input input {
+  flex: 1 !important;
+  padding: 0.75rem !important;
+  padding-right: 40px !important; /* Espaço para o botão remover */
+  border: 1px solid #dce0e4 !important;
   border-radius: 8px !important;
+  background-color: #fff !important;
+  color: var(--text-dark) !important;
   font-size: 1rem !important;
-  transition: all 0.12s ease !important;
-  box-shadow: none !important;
+}
+
+/* Posicionar o botão remover à direita dentro do input */
+.remove-option {
+  position: absolute !important;
+  right: 8px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  z-index: 2 !important;
+  width: 28px !important;
+  height: 28px !important;
+  border-radius: 50% !important;
 }
 
 .remove-option:hover {
-  background-color: rgba(231, 76, 60, 0.08) !important;
-  transform: translateY(-2px) !important;
-  border-color: rgba(231, 76, 60, 0.18) !important;
+  transform: translateY(-50%) scale(1.1) !important;
+  background-color: rgba(231, 76, 60, 0.1) !important;
 }
 
-/* Botão cancelar na criação de votação: vermelho (visível e consistente) */
-.create-voting-form .cancel-btn,
-.create-voting-form .btn-cancel {
-  background-color: #e74c3c !important;
-  color: #fff !important;
-  border: none !important;
+/* Botão para opções padrão */
+.default-options-btn {
+  background-color: var(--bg-card) !important;
+  color: var(--text-medium) !important;
+  border: 1px solid #e1e8ed !important;
   padding: 0.6rem 1rem !important;
   border-radius: 8px !important;
-  font-weight: 600 !important;
   cursor: pointer !important;
-  box-shadow: 0 4px 12px rgba(231, 76, 60, 0.14) !important;
+  font-weight: 500 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+  margin-bottom: 1rem !important;
+  transition: all 0.2s !important;
 }
 
-.create-voting-form .cancel-btn:hover,
-.create-voting-form .btn-cancel:hover {
-  background-color: #c0392b !important;
+.default-options-btn:hover {
+  background-color: var(--bg-card-hover) !important;
+  color: var(--primary-color) !important;
   transform: translateY(-2px) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05) !important;
 }
 
-/* Ajuste fino: garantir que o botão "Nova Votação" mantenha boa separação sem o ::before */
-.create-voting-btn {
-  padding-left: 1.05rem !important; /* pequeno ajuste se antes tinha espaço extra */
+.default-options-btn svg {
+  color: var(--primary-color) !important;
+  font-size: 0.9rem !important;
+}
+
+/* Melhorar o espaçamento do formulário de votação */
+.create-voting-form {
+  background-color: var(--bg-card);
+  border-radius: 12px;
+  padding: 1.5rem !important;
+  margin-bottom: 2rem;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.create-voting-form .form-group {
+  margin-bottom: 1.5rem !important;
+}
+
+.create-voting-form h4 {
+  margin-top: 0 !important;
+  margin-bottom: 1.5rem !important;
+  color: var(--primary-color) !important;
+  font-size: 1.2rem !important;
+  font-weight: 600 !important;
 }
 
 /* Em telas pequenas, manter banner centralizado e botões com bom espaçamento */

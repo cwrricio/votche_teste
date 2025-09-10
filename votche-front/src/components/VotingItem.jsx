@@ -138,3 +138,27 @@ function VotingsList() {
 
 // Exportar o componente para uso em outros arquivos
 export default VotingItem;
+
+// No componente de votação, quando um usuário vota:
+
+const submitVote = async (option) => {
+  try {
+    // Código existente para registrar o voto
+
+    // Adicionar registro de participação para relatórios
+    const userReportsRef = ref(
+      database,
+      `users/${currentUser.uid}/reportAccess/${meetingId}`
+    );
+    await set(userReportsRef, {
+      accessGranted: true,
+      votedAt: serverTimestamp(),
+      meetingName: meetingData.name,
+    });
+
+    // Continuar com o restante do código existente
+  } catch (error) {
+    console.error("Erro ao registrar voto:", error);
+    setError("Não foi possível registrar seu voto. Tente novamente.");
+  }
+};

@@ -1,10 +1,13 @@
 import React, { useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
+import { FaChartBar } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
 import "../styles/MeetingDetails.css";
 
 function MeetingDetails({ meeting, user, onClose, onJoin, onLeave }) {
   const [showQRCode, setShowQRCode] = useState(false);
   const [copied, setCopied] = useState(false);
+  const navigate = useNavigate();
 
   // Formatar data para exibição
   const formatFullDateTime = (date, time) => {
@@ -57,7 +60,7 @@ function MeetingDetails({ meeting, user, onClose, onJoin, onLeave }) {
   };
 
   return (
-    <div className="meeting-details">
+    <div className="meeting-details-modal">
       <div className="meeting-details-header">
         <h2>Detalhes da Reunião</h2>
         {meeting.active && user && user.uid === meeting.createdBy && (
@@ -150,6 +153,26 @@ function MeetingDetails({ meeting, user, onClose, onJoin, onLeave }) {
           </>
         )}
       </div>
+
+      {/* Adicionar seção de relatório para reuniões encerradas */}
+      {!meeting.active && (
+        <div className="meeting-report-section">
+          <h4>Relatório de Votações</h4>
+          <p>
+            Esta reunião foi encerrada. Você pode visualizar o relatório
+            completo das votações.
+          </p>
+          <button
+            className="view-report-button"
+            onClick={() => {
+              onClose();
+              navigate(`/report?meetingId=${meeting.id}`);
+            }}
+          >
+            <FaChartBar /> Ver Relatório Completo
+          </button>
+        </div>
+      )}
     </div>
   );
 }

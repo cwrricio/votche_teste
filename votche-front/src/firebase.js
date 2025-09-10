@@ -374,7 +374,60 @@ const getUserMeetings = async (userId) => {
   }
 };
 
-// Função para listar todas as reuniões ativas que o usuário participa
+// Função para verificar se usuário tem acesso ao relatório de uma reunião
+const checkReportAccess = async (userId, meetingId) => {
+  try {
+    // Verificar se o usuário é o criador da reunião
+    const meetingRef = ref(database, `meetings/${meetingId}`);
+    const meetingSnapshot = await get(meetingRef);
+
+    if (!meetingSnapshot.exists()) {
+      return false;
+    }
+
+    const meetingData = meetingSnapshot.val();
+
+    // Se o usuário for o criador da reunião, tem acesso
+    if (meetingData.createdBy === userId) {
+      return true;
+    }
+
+    // Verificar se o usuário é participante da reunião
+    const participantsRef = ref(
+      database,
+      `meetings/${meetingId}/participants/${userId}`
+    );
+    const participantSnapshot = await get(participantsRef);
+
+    if (participantSnapshot.exists()) {
+      return true;
+    }
+
+    // Verificar se o usuário votou em alguma das votações da reunião
+    const votingsRef = ref(database, `meetings/${meetingId}/votings`);
+    const votingsSnapshot = await get(votingsRef);
+
+    if (votingsSnapshot.exists()) {
+      const votingIds = Object.keys(votingsSnapshot.val());
+
+      for (const votingId of votingIds) {
+        const votingRef = ref(database, `votings/${votingId}/votes/${userId}`);
+        const voteSnapshot = await get(votingRef);
+
+        if (voteSnapshot.exists()) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  } catch (error) {
+    console.error("Erro ao verificar acesso ao relatório:", error);
+    return false;
+  }
+};
+
+// Função para listar todas as reuniões que o usuário participa (ativas e encerradas)
 const getUserParticipatingMeetings = async (userId) => {
   try {
     const participatingRef = ref(database, `users/${userId}/participatingIn`);
@@ -392,7 +445,8 @@ const getUserParticipatingMeetings = async (userId) => {
       const meetingRef = ref(database, `meetings/${meetingId}`);
       const meetingSnapshot = await get(meetingRef);
 
-      if (meetingSnapshot.exists() && meetingSnapshot.val().active) {
+      if (meetingSnapshot.exists()) {
+        // Incluir todas as reuniões, independente se estão ativas ou não
         meetings.push({
           id: meetingId,
           ...meetingSnapshot.val(),
@@ -401,7 +455,11 @@ const getUserParticipatingMeetings = async (userId) => {
     }
 
     // Ordenar por data de criação (mais recente primeiro)
-    return meetings.sort((a, b) => b.createdAt - a.createdAt);
+    return meetings.sort((a, b) => {
+      const timeA = a.createdAt || 0;
+      const timeB = b.createdAt || 0;
+      return timeB - timeA;
+    });
   } catch (error) {
     console.error("Erro ao listar reuniões que o usuário participa:", error);
     throw error;
@@ -927,34 +985,141 @@ const listAllPasswords = async () => {
   }
 };
 
+// Função para obter relatórios disponíveis para o usuário
+const getUserAvailableReports = async (userId) => {
+  try {
+    // Buscar reuniões onde o usuário tem acesso a relatórios
+    const reportsAccessRef = ref(database, `users/${userId}/reportAccess`);
+    const reportsSnapshot = await get(reportsAccessRef);
+
+    if (!reportsSnapshot.exists()) {
+      return [];
+    }
+
+    const reportsAccess = reportsSnapshot.val();
+    const meetingIds = Object.keys(reportsAccess);
+    const availableReports = [];
+
+    // Buscar dados completos de cada reunião
+    for (const meetingId of meetingIds) {
+      const meetingRef = ref(database, `meetings/${meetingId}`);
+      const meetingSnapshot = await get(meetingRef);
+
+      if (meetingSnapshot.exists()) {
+        const meetingData = meetingSnapshot.val();
+
+        // Buscar estatísticas de votação
+        const votingsRef = ref(database, `meetings/${meetingId}/votings`);
+        const votingsSnapshot = await get(votingsRef);
+        const votingsData = votingsSnapshot.exists()
+          ? votingsSnapshot.val()
+          : {};
+
+        // Calcular estatísticas básicas
+        const totalVotings = Object.keys(votingsData).length;
+
+        availableReports.push({
+          id: meetingId,
+          name: meetingData.name,
+          date: meetingData.createdAt,
+          status: meetingData.active ? "Ativa" : "Encerrada",
+          totalVotings,
+          accessedOn: reportsAccess[meetingId].votedAt,
+          createdBy: meetingData.createdBy,
+        });
+      }
+    }
+
+    // Ordenar por data de acesso (mais recente primeiro)
+    return availableReports.sort((a, b) => {
+      const timeA = a.accessedOn || 0;
+      const timeB = b.accessedOn || 0;
+      return timeB - timeA;
+    });
+  } catch (error) {
+    console.error("Erro ao buscar relatórios disponíveis:", error);
+    throw error;
+  }
+};
+
+// Função para obter detalhes completos de uma reunião
+const getMeetingDetails = async (meetingId) => {
+  try {
+    const meetingRef = ref(database, `meetings/${meetingId}`);
+    const meetingSnapshot = await get(meetingRef);
+
+    if (!meetingSnapshot.exists()) {
+      throw new Error("Reunião não encontrada");
+    }
+
+    return {
+      id: meetingId,
+      ...meetingSnapshot.val(),
+    };
+  } catch (error) {
+    console.error("Erro ao obter detalhes da reunião:", error);
+    throw error;
+  }
+};
+
+// Função para obter votações de uma reunião
+const getMeetingVotings = async (meetingId) => {
+  try {
+    const meetingRef = ref(database, `meetings/${meetingId}/votings`);
+    const meetingSnapshot = await get(meetingRef);
+
+    if (!meetingSnapshot.exists()) {
+      return [];
+    }
+
+    const votingIds = Object.keys(meetingSnapshot.val());
+    const votings = [];
+
+    for (const votingId of votingIds) {
+      const votingRef = ref(database, `votings/${votingId}`);
+      const votingSnapshot = await get(votingRef);
+
+      if (votingSnapshot.exists()) {
+        votings.push({
+          id: votingId,
+          ...votingSnapshot.val(),
+        });
+      }
+    }
+
+    return votings;
+  } catch (error) {
+    console.error("Erro ao obter votações da reunião:", error);
+    throw error;
+  }
+};
+
 // Exportar todos os objetos/funções no final do arquivo
 export {
-  app,
   auth,
   googleProvider,
   database,
-  generateMeetingPassword,
-  // Funções para reuniões
-  createMeeting,
   createNewMeeting,
-  joinMeetingByPassword,
-  getUserMeetings,
-  getUserParticipatingMeetings,
-  endMeeting,
-  createVotingInMeeting,
-  registerVoteInMeeting,
-  endVoting,
-  listenToMeeting,
-  listenToVotingsInMeeting,
-  // Nova função para listar reuniões públicas
   getAllActiveMeetings,
-  leaveMeeting,
-  checkMeetingsEndTime,
+  getUserMeetings,
+  joinMeetingByPassword,
   archiveMeeting,
   unarchiveMeeting,
-  deleteMeeting,
+  deleteMeeting, 
   getUserArchivedMeetings,
-  listAllPasswords,
+  getUserParticipatingMeetings,
+  getMeetingDetails,
+  getMeetingVotings,
+  checkReportAccess,
+  generateMeetingPassword,
+  createVotingInMeeting,  // Função necessária para MeetingSession.jsx
+  registerVoteInMeeting,
+  endMeeting, 
+  endVoting,
+  listenToMeeting,
+  listenToVotingsInMeeting,  // Corrigido o nome (era Vootings)
+  leaveMeeting,
+  getUserAvailableReports
 };
 
 export default app;
