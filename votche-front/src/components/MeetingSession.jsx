@@ -262,7 +262,7 @@ function MeetingSession({ user, onBack }) {
             <div className="password-info-column">
               <p className="password-label">Senha da reunião:</p>
               <div className="password-display-row">
-                <strong className="meeting-password">{meeting.password}</strong>
+                <strong className="meeting-password">{meeting.password?.toUpperCase()}</strong>
                 <button
                   className={`copy-button ${copied ? "copied" : ""}`}
                   onClick={handleCopyCode}
