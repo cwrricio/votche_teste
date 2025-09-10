@@ -16,6 +16,7 @@ import {
   onValue,
   remove,
   serverTimestamp,
+  increment, // Adicione esta importação
 } from "firebase/database";
 
 // Your web app's Firebase configuration
@@ -615,7 +616,11 @@ const registerVoteInMeeting = async (
   userId
 ) => {
   try {
+<<<<<<< HEAD
     // Verificar se a votação existe
+=======
+    // Verificar se a votação existe e está ativa
+>>>>>>> votacao-anonima
     const votingRef = ref(
       database,
       `meetings/${meetingId}/votings/${votingId}`
@@ -627,7 +632,14 @@ const registerVoteInMeeting = async (
     }
 
     const votingData = votingSnapshot.val();
+<<<<<<< HEAD
     const isAnonymous = votingData.anonymous === true;
+=======
+
+    if (!votingData.active) {
+      throw new Error("Esta votação já foi encerrada");
+    }
+>>>>>>> votacao-anonima
 
     // Buscar informações do usuário atual
     const currentUser = auth.currentUser;
@@ -635,14 +647,51 @@ const registerVoteInMeeting = async (
     const userEmail = currentUser?.email || "";
     const userPhotoURL = currentUser?.photoURL || "";
 
-    // Registrar o voto
+    // Verificar se a votação é anônima
+    const isAnonymous = votingData.anonymous === true;
+
     const updates = {};
-    updates[`meetings/${meetingId}/votings/${votingId}/votes/${userId}`] =
-      selectedOption;
+
+    // Registrar o voto - com informações diferentes dependendo se é anônimo ou não
+    if (isAnonymous) {
+      // Para votações anônimas, registramos apenas que o usuário votou, sem a opção escolhida
+      updates[
+        `meetings/${meetingId}/votings/${votingId}/anonymousVotes/${userId}`
+      ] = true;
+
+      // E registramos a opção escolhida sem associá-la ao usuário
+      // Verificamos se a opção já tem contagem ou iniciamos com 1
+      updates[
+        `meetings/${meetingId}/votings/${votingId}/anonymousOptions/${selectedOption}`
+      ] = increment(1);
+
+      // Incrementar o contador total de votos
+      if (!votingData.totalVotes) {
+        updates[`meetings/${meetingId}/votings/${votingId}/totalVotes`] = 1;
+      } else {
+        updates[`meetings/${meetingId}/votings/${votingId}/totalVotes`] =
+          increment(1);
+      }
+    } else {
+      // Para votações nominais, mantemos o comportamento original
+      updates[`meetings/${meetingId}/votings/${votingId}/votes/${userId}`] =
+        selectedOption;
+
+      // Incrementar o contador total de votos
+      if (!votingData.totalVotes) {
+        updates[`meetings/${meetingId}/votings/${votingId}/totalVotes`] = 1;
+      } else {
+        updates[`meetings/${meetingId}/votings/${votingId}/totalVotes`] =
+          increment(1);
+      }
+    }
+
+    // Registrar o timestamp do voto (em ambos os casos)
     updates[
       `meetings/${meetingId}/votings/${votingId}/voteTimestamps/${userId}`
     ] = serverTimestamp();
 
+<<<<<<< HEAD
     // Importante: Atualizar também o contador em options para votações anônimas
     // Isso garantirá que a contagem seja correta mesmo sem exibir quem votou
     if (isAnonymous) {
@@ -654,6 +703,33 @@ const registerVoteInMeeting = async (
         typeof votingData.options[selectedOption].count === "number"
       ) {
         currentCount = votingData.options[selectedOption].count;
+=======
+    // IMPORTANTE: Atualizar os dados do participante se estiverem incompletos
+    const participantRef = ref(
+      database,
+      `meetings/${meetingId}/participants/${userId}`
+    );
+    const participantSnapshot = await get(participantRef);
+
+    // Se o participante já existe mas os dados estão incompletos, ou se não existe ainda
+    if (
+      !participantSnapshot.exists() ||
+      !participantSnapshot.val().name ||
+      !participantSnapshot.val().email
+    ) {
+      // Adicionar à lista de atualizações os dados completos do usuário
+      updates[`meetings/${meetingId}/participants/${userId}/name`] =
+        userDisplayName;
+      updates[`meetings/${meetingId}/participants/${userId}/email`] = userEmail;
+      updates[`meetings/${meetingId}/participants/${userId}/photoURL`] =
+        userPhotoURL;
+      updates[`meetings/${meetingId}/participants/${userId}/id`] = userId;
+
+      // Se a entrada de participante não existir, adicionar joinedAt também
+      if (!participantSnapshot.exists()) {
+        updates[`meetings/${meetingId}/participants/${userId}/joinedAt`] =
+          new Date().toISOString();
+>>>>>>> votacao-anonima
       }
 
       // Atualizar o contador incrementando 1
@@ -668,7 +744,11 @@ const registerVoteInMeeting = async (
     // Executar todas as atualizações em uma única operação
     await update(ref(database), updates);
 
-    console.log("Voto registrado com sucesso e dados do usuário atualizados");
+    console.log(
+      `Voto ${
+        isAnonymous ? "anônimo" : "nominal"
+      } registrado com sucesso para a opção ${selectedOption}`
+    );
     return true;
   } catch (error) {
     console.error("Erro ao registrar voto:", error);
@@ -676,7 +756,7 @@ const registerVoteInMeeting = async (
   }
 };
 
-// Função para encerrar uma votação - adicionar cálculo e registro do resultado
+// Função para encerrar uma votação - modificada para lidar com votos anônimos
 const endVoting = async (meetingId, votingId, userId) => {
   try {
     // Verificar se o usuário é o criador da reunião
@@ -706,8 +786,13 @@ const endVoting = async (meetingId, votingId, userId) => {
 
     const votingData = votingSnapshot.val();
 
-    // Calcular resultado da votação
-    const result = calculateVotingResult(votingData);
+    // Verificar se a votação é anônima
+    const isAnonymous = votingData.anonymous === true;
+
+    // Calcular resultado da votação - usando o método apropriado
+    const result = isAnonymous
+      ? calculateAnonymousVotingResult(votingData)
+      : calculateVotingResult(votingData);
 
     // Atualizar status da votação com os resultados
     const updates = {
@@ -724,10 +809,7 @@ const endVoting = async (meetingId, votingId, userId) => {
       officialResult: result.isTie ? null : result.winner,
     };
 
-    await update(
-      ref(database, `meetings/${meetingId}/votings/${votingId}`),
-      updates
-    );
+    await update(votingRef, updates);
     return true;
   } catch (error) {
     console.error("Erro ao encerrar votação:", error);
@@ -735,22 +817,68 @@ const endVoting = async (meetingId, votingId, userId) => {
   }
 };
 
-// Função auxiliar para calcular o resultado da votação
-const calculateVotingResult = (votingData) => {
-  const options = votingData.options || {};
+// Nova função para calcular resultado de votações anônimas
+const calculateAnonymousVotingResult = (votingData) => {
+  const anonymousOptions = votingData.anonymousOptions || {};
   let maxVotes = 0;
   let winner = null;
   let winners = [];
 
+  console.log("Calculando resultado anônimo com dados:", anonymousOptions);
+
   // Encontrar o maior número de votos e as opções com esse número
-  Object.entries(options).forEach(([option, votes]) => {
-    const voteCount = votes || 0;
+  Object.entries(anonymousOptions).forEach(([option, count]) => {
+    // Garantir que count seja um número
+    const voteCount = typeof count === "number" ? count : 0;
 
     if (voteCount > maxVotes) {
       maxVotes = voteCount;
       winner = option;
       winners = [option];
     } else if (voteCount === maxVotes && voteCount > 0) {
+      winners.push(option);
+    }
+  });
+
+  // Verificar se há empate
+  const isTie = winners.length > 1;
+
+  console.log("Resultado do cálculo anônimo:", {
+    winner,
+    winners,
+    isTie,
+    maxVotes,
+  });
+
+  return {
+    winner,
+    winners,
+    isTie,
+    maxVotes,
+  };
+};
+
+// Função auxiliar para calcular o resultado da votação nominal
+const calculateVotingResult = (votingData) => {
+  // Primeiro contamos os votos por opção
+  const voteCounts = {};
+  const votes = votingData.votes || {};
+
+  Object.values(votes).forEach((option) => {
+    voteCounts[option] = (voteCounts[option] || 0) + 1;
+  });
+
+  let maxVotes = 0;
+  let winner = null;
+  let winners = [];
+
+  // Encontrar o maior número de votos e as opções com esse número
+  Object.entries(voteCounts).forEach(([option, count]) => {
+    if (count > maxVotes) {
+      maxVotes = count;
+      winner = option;
+      winners = [option];
+    } else if (count === maxVotes && count > 0) {
       winners.push(option);
     }
   });
@@ -810,32 +938,53 @@ const registerMinervaVote = async (
       );
     }
 
-    // MODIFICAÇÃO: Calcular empate diretamente a partir das contagens de votos
-    const options = votingData.options || {};
+    // Verificar se a votação é anônima
+    const isAnonymous = votingData.anonymous === true;
+
     let maxVotes = 0;
     let winners = [];
 
-    // Encontrar o maior número de votos
-    Object.entries(options).forEach(([option, value]) => {
-      const count = value && typeof value.count === "number" ? value.count : 0;
-      if (count > maxVotes) {
-        maxVotes = count;
-      }
-    });
+    // Usar a fonte de dados correta dependendo do tipo de votação
+    if (isAnonymous) {
+      // Para votações anônimas, usar anonymousOptions
+      const anonymousOptions = votingData.anonymousOptions || {};
 
-    // Encontrar todas as opções com esse número máximo de votos
-    Object.entries(options).forEach(([option, value]) => {
-      const count = value && typeof value.count === "number" ? value.count : 0;
-      if (count === maxVotes && count > 0) {
-        winners.push(option);
-      }
-    });
+      // Encontrar o maior número de votos
+      Object.entries(anonymousOptions).forEach(([option, count]) => {
+        const voteCount = typeof count === "number" ? count : 0;
+        if (voteCount > maxVotes) {
+          maxVotes = voteCount;
+          winners = [option];
+        } else if (voteCount === maxVotes && voteCount > 0) {
+          winners.push(option);
+        }
+      });
+    } else {
+      // Para votações não anônimas, usar votes diretamente
+      const voteCounts = {};
+      const votes = votingData.votes || {};
+
+      // Contar votos por opção
+      Object.values(votes).forEach((option) => {
+        voteCounts[option] = (voteCounts[option] || 0) + 1;
+      });
+
+      // Encontrar o maior número de votos
+      Object.entries(voteCounts).forEach(([option, count]) => {
+        if (count > maxVotes) {
+          maxVotes = count;
+          winners = [option];
+        } else if (count === maxVotes && count > 0) {
+          winners.push(option);
+        }
+      });
+    }
 
     // Determinar se há empate (mais de uma opção com o número máximo de votos)
     const isTie = winners.length > 1;
 
     console.log("Verificação de empate:", {
-      options,
+      isAnonymous,
       maxVotes,
       winners,
       isTie,

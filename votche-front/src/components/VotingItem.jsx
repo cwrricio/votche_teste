@@ -184,8 +184,11 @@ function VotingItem({
 
       <div className="voting-footer">
         <div className="total-votes">
+<<<<<<< HEAD
           <FaVoteYea className="vote-count-icon" />
           Total: {voteCount} votos
+=======
+>>>>>>> votacao-anonima
         </div>
 
         <div className="action-buttons">
