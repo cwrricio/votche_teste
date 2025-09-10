@@ -15,6 +15,7 @@ import {
   update,
   onValue,
   remove,
+  serverTimestamp,
 } from "firebase/database";
 
 // Your web app's Firebase configuration
@@ -306,17 +307,46 @@ const joinMeetingByPassword = async (password, userId) => {
       throw new Error("Esta reunião foi encerrada");
     }
 
-    // Obter informações completas do usuário atual
-    const userInfo = auth.currentUser;
+    // Buscar as informações completas do usuário através do Auth
+    const userAuth = auth.currentUser;
+    // Se não conseguirmos obter do Auth, vamos tentar buscar do banco de usuários
+    let userName = userAuth?.displayName || "";
+    let userEmail = userAuth?.email || "";
+    let userPhoto = userAuth?.photoURL || "";
 
-    // Adicionar usuário como participante com informações completas
+    if (!userName || !userEmail) {
+      try {
+        // Tentar obter dados do perfil do usuário no banco
+        const userProfileRef = ref(database, `users/${userId}/profile`);
+        const userProfileSnapshot = await get(userProfileRef);
+
+        if (userProfileSnapshot.exists()) {
+          const userProfile = userProfileSnapshot.val();
+          userName =
+            userName || userProfile.displayName || userProfile.name || "";
+          userEmail = userEmail || userProfile.email || "";
+          userPhoto = userPhoto || userProfile.photoURL || "";
+        }
+      } catch (profileErr) {
+        console.log("Erro ao buscar perfil do usuário:", profileErr);
+      }
+    }
+
+    // Usar o email para extrair um nome se ainda não temos
+    const emailName = userEmail ? userEmail.split("@")[0] : "";
+    const displayName =
+      userName || emailName || `Usuário ${userId.substring(0, 6)}`;
+
+    // Garantir que salvamos todos os dados possíveis do usuário
     await update(
       ref(database, `meetings/${meetingId}/participants/${userId}`),
       {
         joinedAt: new Date().toISOString(),
-        name: userInfo.displayName || "",
-        email: userInfo.email || "",
-        photoURL: userInfo.photoURL || "",
+        name: displayName,
+        email: userEmail,
+        photoURL: userPhoto,
+        fullName: displayName,
+        id: userId,
       }
     );
 
@@ -578,119 +608,65 @@ const createVotingInMeeting = async (
 };
 
 // Função para registrar voto em uma votação de uma reunião
-const registerVoteInMeeting = async (meetingId, votingId, option, userId) => {
+const registerVoteInMeeting = async (
+  meetingId,
+  votingId,
+  selectedOption,
+  userId
+) => {
   try {
-    // Verificar se a votação existe
-    const votingRef = ref(
-      database,
-      `meetings/${meetingId}/votings/${votingId}`
-    );
-    const votingSnapshot = await get(votingRef);
+    // Verificações existentes...
 
-    if (!votingSnapshot.exists()) {
-      throw new Error("Votação não encontrada");
-    }
+    // Buscar informações do usuário atual
+    const auth = getAuth();
+    const currentUser = auth.currentUser;
 
-    const votingData = votingSnapshot.val();
+    // Preparar os dados completos do usuário
+    const userDisplayName = currentUser?.displayName || "";
+    const userEmail = currentUser?.email || "";
+    const userPhotoURL = currentUser?.photoURL || "";
 
-    // Verificar se a votação está ativa
-    if (
-      !votingData.active ||
-      (votingData.endTime && votingData.endTime < Date.now())
-    ) {
-      throw new Error("Esta votação foi encerrada");
-    }
-
-    // Buscar se a votação é anônima
-    // Preferir o campo da votação, se não existir, cair para o da reunião (retrocompatibilidade)
-    let isAnonymous = false;
-    if (typeof votingData.anonymous !== "undefined") {
-      isAnonymous = votingData.anonymous === true;
-    } else {
-      const meetingRef = ref(database, `meetings/${meetingId}`);
-      const meetingSnapshot = await get(meetingRef);
-      const meetingData = meetingSnapshot.exists() ? meetingSnapshot.val() : {};
-      isAnonymous = meetingData.isAnonymous === true;
-    }
-
-    // Se não for anônima, impedir voto duplo
-    if (!isAnonymous && votingData.voters && votingData.voters[userId]) {
-      throw new Error("Você já votou nesta votação");
-    }
-
-    // Suporte a múltipla escolha
-    const isMulti = votingData.votingType === "multi";
-    const selectedOptions =
-      isMulti && Array.isArray(option) ? option : [option];
-
-    // Normalizar e validar opções
-    const normalizedOptions = selectedOptions.map(
-      (opt) =>
-        opt.trim().charAt(0).toUpperCase() + opt.trim().slice(1).toLowerCase()
-    );
-
-    // Atualizar contagem de votos para cada opção
+    // Registrar o voto
     const updates = {};
-    for (const normalizedOption of normalizedOptions) {
-      // Verificar se a opção existe
-      let originalOption = normalizedOption;
-      let optionExists = false;
-      if (votingData.options) {
-        for (const opt of Object.keys(votingData.options)) {
-          const normalizedOpt =
-            opt.trim().charAt(0).toUpperCase() +
-            opt.trim().slice(1).toLowerCase();
-          if (normalizedOpt === normalizedOption) {
-            originalOption = opt;
-            optionExists = true;
-            break;
-          }
-        }
-      }
-      if (!optionExists) {
-        // Se a opção não existir, criar com texto igual à chave
-        const optionsRef = ref(
-          database,
-          `meetings/${meetingId}/votings/${votingId}/options`
-        );
-        await update(optionsRef, {
-          [normalizedOption]: { text: normalizedOption, count: 0 },
-        });
-      }
-      // Incrementar contagem
-      const optionRef = ref(
-        database,
-        `meetings/${meetingId}/votings/${votingId}/options/${originalOption}`
-      );
-      const optionSnapshot = await get(optionRef);
-      let currentVotes = 0;
-      let text = originalOption;
-      if (optionSnapshot.exists()) {
-        const val = optionSnapshot.val();
-        if (typeof val === "object" && val.count !== undefined) {
-          currentVotes = val.count;
-          text = val.text || originalOption;
-        } else if (typeof val === "number") {
-          currentVotes = val;
-        }
-      }
-      updates[`options/${originalOption}`] = { text, count: currentVotes + 1 };
-    }
+    updates[`meetings/${meetingId}/votings/${votingId}/votes/${userId}`] =
+      selectedOption;
+    updates[
+      `meetings/${meetingId}/votings/${votingId}/voteTimestamps/${userId}`
+    ] = serverTimestamp();
 
-    // Se NÃO for anônima, registrar voto e timestamp do usuário
-    if (!isAnonymous) {
-      updates[`voters/${userId}`] = true;
-      updates[`votes/${userId}`] = isMulti
-        ? normalizedOptions
-        : normalizedOptions[0];
-      updates[`voteTimestamps/${userId}`] = Date.now();
-    }
-
-    await update(
-      ref(database, `meetings/${meetingId}/votings/${votingId}`),
-      updates
+    // IMPORTANTE: Também atualizar os dados do participante se estiverem incompletos
+    // Buscar os dados atuais do participante para verificar se estão completos
+    const participantRef = ref(
+      database,
+      `meetings/${meetingId}/participants/${userId}`
     );
+    const participantSnapshot = await get(participantRef);
 
+    // Se o participante já existe mas os dados estão incompletos, ou se não existe ainda
+    if (
+      !participantSnapshot.exists() ||
+      !participantSnapshot.val().name ||
+      !participantSnapshot.val().email
+    ) {
+      // Adicionar à lista de atualizações os dados completos do usuário
+      updates[`meetings/${meetingId}/participants/${userId}/name`] =
+        userDisplayName;
+      updates[`meetings/${meetingId}/participants/${userId}/email`] = userEmail;
+      updates[`meetings/${meetingId}/participants/${userId}/photoURL`] =
+        userPhotoURL;
+      updates[`meetings/${meetingId}/participants/${userId}/id`] = userId;
+
+      // Se a entrada de participante não existir, adicionar joinedAt também
+      if (!participantSnapshot.exists()) {
+        updates[`meetings/${meetingId}/participants/${userId}/joinedAt`] =
+          new Date().toISOString();
+      }
+    }
+
+    // Executar todas as atualizações em uma única operação
+    await update(ref(database), updates);
+
+    console.log("Voto registrado com sucesso e dados do usuário atualizados");
     return true;
   } catch (error) {
     console.error("Erro ao registrar voto:", error);
@@ -883,8 +859,7 @@ const registerMinervaVote = async (
       hasMinervaVote: true,
       minervaVotedBy: userId,
       minervaVotedAt: Date.now(),
-      minervaOption: selectedOption,
-      officialResult: selectedOption, // Definir o resultado oficial
+      minervaOption: selectedOption, // Definir o resultado oficial
       // Também atualizamos estes campos para garantir consistência
       winners: winners,
       isTie: false, // Após aplicar o voto de minerva, não há mais empate
@@ -1312,7 +1287,7 @@ export {
   getMeetingVotings,
   checkReportAccess,
   generateMeetingPassword,
-  createVotingInMeeting, // Função necessária para MeetingSession.jsx
+  createVotingInMeeting,
   registerVoteInMeeting,
   endMeeting,
   endVoting,
@@ -1322,5 +1297,3 @@ export {
   getUserAvailableReports,
   registerMinervaVote,
 };
-
-export default app;

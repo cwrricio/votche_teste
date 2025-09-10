@@ -1,9 +1,12 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { FaChevronDown, FaChevronUp, FaClock } from "react-icons/fa";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import "../styles/VotingDetailsTable.css";
 import VotingResult from "./VotingResult";
+import { getAuth } from "firebase/auth";
+import { ref, update } from "firebase/database";
+import { database } from "../firebase"; // Importe sua configuração do Firebase
 
 const VotingDetailsTable = ({
   voting,
@@ -53,24 +56,59 @@ const VotingDetailsTable = ({
       });
     }
 
+    // LOG PARA DEPURAÇÃO - remova após resolver o problema
+    console.log("Dados de participantes disponíveis:", {
+      meetingParticipants: meeting?.participants || {},
+      componentParticipants: participants || {},
+    });
+
     // Processar os votos existentes
     Object.entries(voting.votes || {}).forEach(([userId, option]) => {
       if (!votesByOption[option]) {
         votesByOption[option] = [];
       }
 
-      // Obter informações do usuário
-      const user = participants[userId] || {};
-      const timestamp = voting.voteTimestamps?.[userId] || null;
+      // Verificar todas as fontes possíveis para dados do usuário
+      const voterData = {};
+
+      // 1. Dados do voto
+      if (voting.voteTimestamps?.[userId]) {
+        voterData.timestamp = voting.voteTimestamps[userId];
+      }
+
+      // 2. Dados do participante na reunião
+      if (meeting?.participants?.[userId]) {
+        const participant = meeting.participants[userId];
+        voterData.name = participant.name || participant.fullName;
+        voterData.email = participant.email;
+        voterData.id = participant.id || userId;
+      }
+
+      // 3. Dados do participante passados via props
+      if (participants?.[userId]) {
+        const participant = participants[userId];
+        if (!voterData.name)
+          voterData.name = participant.name || participant.fullName;
+        if (!voterData.email) voterData.email = participant.email;
+        if (!voterData.id) voterData.id = participant.id || userId;
+      }
+
+      // 4. Se ainda não temos nome, use o ID formatado
+      if (!voterData.name) {
+        voterData.name = `Usuário ${userId.substring(0, 6)}`;
+      }
+
+      // 5. Se o usuário atual está votando
+      if (currentUser && userId === currentUser.uid) {
+        if (!voterData.name) voterData.name = currentUser.displayName;
+        if (!voterData.email) voterData.email = currentUser.email;
+      }
 
       votesByOption[option].push({
         id: userId,
-        name:
-          user.name ||
-          user.displayName ||
-          `Usuário ${userId.substring(0, 6)}...`,
-        email: user.email || "-",
-        timestamp,
+        name: voterData.name,
+        email: voterData.email || "-",
+        timestamp: voterData.timestamp,
         option: option,
       });
     });
@@ -686,7 +724,52 @@ const VotingDetailsTable = ({
 
               // Obter detalhes do participante
               const participant = meeting.participants?.[userId] || {};
-              const timestamp = voting.voteTimestamps?.[userId] || null;
+              const userData = participants[userId] || {};
+
+              // Mesma lógica robusta da função getVotesByOption
+              let displayName = null;
+
+              // 1. Tentar obter o nome diretamente dos objetos
+              if (participant.name) displayName = participant.name;
+              else if (participant.displayName)
+                displayName = participant.displayName;
+              else if (userData.name) displayName = userData.name;
+              else if (userData.displayName) displayName = userData.displayName;
+              else if (participant.fullName) displayName = participant.fullName;
+              else if (userData.fullName) displayName = userData.fullName;
+              // 2. Tentar extrair do email se disponível
+              else if (participant.email && participant.email.includes("@"))
+                displayName = participant.email.split("@")[0];
+              else if (userData.email && userData.email.includes("@"))
+                displayName = userData.email.split("@")[0];
+              // 3. Verificar se é o usuário atual
+              else if (currentUser && userId === currentUser.uid)
+                displayName =
+                  currentUser.displayName || currentUser.email?.split("@")[0];
+              // 4. Fallback para ID formatado se nada mais funcionar
+              if (!displayName)
+                displayName = `Usuário ${userId.substring(0, 6)}...`;
+
+              // Aplicar formatação para melhorar a apresentação do nome
+              if (displayName && displayName.length > 0) {
+                // Converter primeira letra para maiúscula se começar com minúscula
+                if (displayName[0] === displayName[0].toLowerCase()) {
+                  displayName =
+                    displayName[0].toUpperCase() + displayName.slice(1);
+                }
+
+                // Remover caracteres especiais do final se presentes
+                displayName = displayName.replace(/[._-]+$/, "");
+              }
+
+              // Obter email com todas as possibilidades
+              const userEmail =
+                participant.email ||
+                userData.email ||
+                (currentUser && userId === currentUser.uid
+                  ? currentUser.email
+                  : "-");
+
               const formattedDate = timestamp
                 ? new Date(timestamp).toLocaleDateString("pt-BR", {
                     day: "2-digit",
@@ -698,10 +781,8 @@ const VotingDetailsTable = ({
                 : "Data não disponível";
 
               votesByOption[option].push({
-                name:
-                  participant.displayName ||
-                  `Usuário ${userId.substring(0, 6)}...`,
-                email: participant.email || "-",
+                name: displayName,
+                email: userEmail,
                 timestamp: formattedDate,
               });
             });
@@ -854,6 +935,113 @@ const VotingDetailsTable = ({
       winners,
     };
   };
+
+  // Efeito para atualizar emails dos participantes ao carregar o componente
+  useEffect(() => {
+    const updateParticipantEmails = async () => {
+      if (!meeting?.participants) return;
+
+      const auth = getAuth();
+      const updatedParticipants = { ...meeting.participants };
+      let needsUpdate = false;
+
+      // Para cada participante que não tem email registrado
+      for (const [userId, participant] of Object.entries(updatedParticipants)) {
+        if (!participant.email) {
+          try {
+            // Tentar buscar email do usuário no Firebase Auth
+            const userRecord = await getAuth().getUser(userId);
+            if (userRecord.email) {
+              updatedParticipants[userId].email = userRecord.email;
+              needsUpdate = true;
+            }
+          } catch (error) {
+            console.log(`Não foi possível buscar email para usuário ${userId}`);
+          }
+        }
+      }
+
+      // Se houve alterações, atualizar o banco de dados
+      if (needsUpdate) {
+        try {
+          const meetingRef = ref(
+            database,
+            `meetings/${meeting.id}/participants`
+          );
+          await update(meetingRef, updatedParticipants);
+          console.log("Emails dos participantes atualizados com sucesso!");
+        } catch (error) {
+          console.error("Erro ao atualizar emails dos participantes:", error);
+        }
+      }
+    };
+
+    updateParticipantEmails();
+  }, [meeting?.participants]);
+
+  // Adicione no início do componente
+  useEffect(() => {
+    // Função para corrigir participantes com dados incompletos
+    const updateIncompleteParticipants = async () => {
+      if (!meeting || !meeting.participants || !currentUser) return;
+
+      try {
+        // Verificar se algum participante está com dados incompletos
+        const incompleteParticipants = Object.entries(
+          meeting.participants
+        ).filter(([id, data]) => !data.name || !data.email);
+
+        if (incompleteParticipants.length === 0) return;
+
+        console.log(
+          `Encontrados ${incompleteParticipants.length} participantes com dados incompletos`
+        );
+
+        // Para cada participante incompleto, tentar completar dados
+        for (const [userId, data] of incompleteParticipants) {
+          // Se for o usuário atual, usar seus dados
+          if (userId === currentUser.uid) {
+            await update(
+              ref(database, `meetings/${meeting.id}/participants/${userId}`),
+              {
+                name:
+                  currentUser.displayName ||
+                  data.name ||
+                  `Usuário ${userId.substring(0, 6)}`,
+                email: currentUser.email || data.email || "-",
+                id: userId,
+              }
+            );
+          }
+          // Caso contrário, tentar buscar dados do perfil
+          else {
+            // Buscar perfil do usuário se disponível
+            const userProfileRef = ref(database, `users/${userId}/profile`);
+            const profileSnapshot = await get(userProfileRef);
+
+            if (profileSnapshot.exists()) {
+              const profile = profileSnapshot.val();
+              await update(
+                ref(database, `meetings/${meeting.id}/participants/${userId}`),
+                {
+                  name:
+                    profile.displayName ||
+                    data.name ||
+                    `Usuário ${userId.substring(0, 6)}`,
+                  email: profile.email || data.email || "-",
+                  id: userId,
+                }
+              );
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Erro ao atualizar participantes incompletos:", error);
+      }
+    };
+
+    updateIncompleteParticipants();
+  }, [meeting?.id, currentUser]);
 
   const votesByOption = getVotesByOption();
   const isStandard = isStandardVoting();
