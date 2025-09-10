@@ -904,7 +904,7 @@ const VotingDetailsTable = ({
                   <tbody>
                     {voters.map((voter) => (
                       <tr key={voter.id} className="voter-row">
-                        <td>
+                        <td data-label="Nome">
                           <div className="voter-info">
                             <div className="voter-avatar">
                               {getInitials(voter.name)}
@@ -912,8 +912,8 @@ const VotingDetailsTable = ({
                             <span className="voter-name">{voter.name}</span>
                           </div>
                         </td>
-                        <td>{voter.email}</td>
-                        <td>
+                        <td data-label="Email">{voter.email}</td>
+                        <td data-label="Data/Hora">
                           <div className="voter-time">
                             <FaClock
                               style={{ marginRight: "5px", fontSize: "0.8rem" }}
@@ -923,7 +923,7 @@ const VotingDetailsTable = ({
                         </td>
                         {/* Mostrar tipo de voto apenas para votações padrão */}
                         {isStandard && (
-                          <td>
+                          <td data-label="Opção">
                             <span
                               className={`vote-type ${getOptionClass(option)}`}
                             >

@@ -248,13 +248,7 @@ function AppContent() {
       {!isLandingPage ? (
         <div className="app-layout">
           <Sidebar isOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
-          <button
-            className="sidebar-toggle"
-            onClick={toggleSidebar}
-            aria-label="Abrir menu lateral"
-          >
-            {sidebarOpen ? "×" : "☰"}
-          </button>
+          
 
           <div className="main-content">
             <Routes>

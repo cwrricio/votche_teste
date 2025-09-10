@@ -634,11 +634,71 @@
 
 /* Responsividade */
 @media (max-width: 768px) {
-  .voting-results {
-    grid-template-columns: 1fr;
+  .report-dashboard-container {
+    padding: 10px;
+  }
+
+  .dashboard-header h2 {
+    font-size: 1.4rem;
+  }
+
+  .dashboard-header p {
+    font-size: 0.9rem;
+  }
+
+  .meetings-list {
+    gap: 0.8rem;
+  }
+
+  .meeting-report-card {
+    padding: 0;
+  }
+
+  .meeting-card-header {
+    padding: 15px;
+  }
+
+  .meeting-card-header h3 {
+    font-size: 1.1rem;
+  }
+
+  .meeting-meta-info {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+  }
+
+  .meeting-status,
+  .meeting-date,
+  .meeting-votings-count {
+    font-size: 0.8rem;
+  }
+
+  /* Melhorar visualização das estatísticas */
+  .meeting-stats-row {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .stat-card {
+    width: 100%;
+  }
+
+  /* Melhorar visualização dos resultados de votação */
+  .voting-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .voting-meta {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
   }
 
   .voting-chart {
+    min-height: auto;
     height: 250px;
   }
 }

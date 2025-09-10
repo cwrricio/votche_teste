@@ -248,29 +248,125 @@
 
 /* Design responsivo */
 @media (max-width: 768px) {
-  .voters-table th,
-  .voters-table td {
-    padding: 10px 12px;
+  /* Fazer tabela se ajustar para visualização em telas pequenas */
+  .voting-details-table {
+    margin-left: -15px;
+    margin-right: -15px;
+    width: calc(100% + 30px);
   }
 
+  .option-section {
+    margin-bottom: 25px;
+    border-radius: 0;
+  }
+
+  /* Ajuste para cabeçalhos de opções */
+  .option-header {
+    padding: 12px 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  /* Layout das tabelas para mobile */
+  .voters-table {
+    display: block;
+    width: 100%;
+  }
+
+  /* Ajustar layout da tabela para um formato mais adequado a mobile */
+  .voters-table thead {
+    display: none; /* Ocultar cabeçalhos originais */
+  }
+
+  .voters-table tbody {
+    display: block;
+    width: 100%;
+  }
+
+  .voters-table tr {
+    display: block;
+    margin-bottom: 12px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 12px;
+  }
+
+  .voters-table td {
+    display: block;
+    text-align: left;
+    padding: 8px 12px;
+    border: none;
+    position: relative;
+    padding-left: 40%;
+    min-height: 30px;
+  }
+
+  /* Adicionar labels para colunas em mobile */
+  .voters-table td:before {
+    position: absolute;
+    left: 12px;
+    width: 35%;
+    padding-right: 10px;
+    font-weight: bold;
+    content: attr(data-label);
+  }
+
+  /* Ajustar avatar do votante */
+  .voter-info {
+    flex-direction: row;
+    width: 100%;
+  }
+
+  /* Melhor visualização do tipo de voto em mobile */
+  .vote-type {
+    margin-top: 5px;
+    display: inline-block;
+  }
+
+  /* Esconder elementos desnecessários em telas pequenas */
+  .voter-card .voter-email,
+  .voter-card .voter-time,
+  .voter-card .voter-avatar {
+    display: none;
+  }
+
+  /* Simplificar o card de votante para mostrar apenas o nome */
+  .voter-card {
+    padding: 10px 8px;
+    display: block;
+    border-bottom: 1px solid #e0e0e0;
+  }
+
+  /* Ajustar o estilo do nome para ficar mais visível */
+  .voter-card .voter-name {
+    font-size: 14px;
+    display: block;
+    width: 100%;
+    padding-left: 0;
+  }
+
+  /* Remover margens e paddings desnecessários */
+  .voter-info {
+    padding: 0;
+    margin: 0;
+    display: block;
+  }
+
+  /* Último item não precisa de borda */
+  .voters-list .voter-card:last-child {
+    border-bottom: none;
+  }
+
+  /* Ajustar o cabeçalho da opção */
   .option-header {
     padding: 10px 12px;
+    border-bottom: 2px solid #e0e0e0;
   }
 
-  /* Ajustes para mobile */
-  .voters-table th:nth-child(2),
-  .voters-table td:nth-child(2) {
-    display: none; /* Esconde o email em telas pequenas */
-  }
-
-  .voters-table th:nth-child(1),
-  .voters-table td:nth-child(1) {
-    width: 60%; /* Nome ocupa 60% em mobile */
-  }
-
-  .voters-table th:nth-child(3),
-  .voters-table td:nth-child(3) {
-    width: 40%; /* Data ocupa 40% em mobile */
+  /* Ajustar a lista de votantes */
+  .voters-list {
+    padding: 0;
   }
 }
 
@@ -416,4 +512,116 @@
   align-items: center;
   color: #6c757d;
   font-size: 0.9rem;
+}
+
+/* Regras responsivas APENAS para dispositivos móveis */
+@media (max-width: 768px) {
+  /* Esconder cabeçalhos da tabela em telas pequenas */
+  .voters-table thead {
+    display: none;
+  }
+
+  /* Modificar layout da tabela para exibição em lista */
+  .voters-table tbody tr {
+    display: flex;
+    flex-direction: column;
+    border-bottom: 1px solid #e0e0e0;
+    padding: 8px 0;
+  }
+
+  /* Mostrar apenas o nome */
+  .voters-table tbody td {
+    display: none; /* Esconder todos os campos por padrão */
+    border: none;
+    padding: 0;
+  }
+
+  /* Mostrar apenas a célula com o nome */
+  .voters-table tbody td:first-child {
+    display: block;
+    width: 100%;
+    padding: 5px;
+  }
+
+  /* Ajustar espaçamento */
+  .voter-info {
+    padding: 0;
+  }
+
+  /* Manter o avatar visível no celular */
+  .voter-avatar {
+    margin-right: 10px;
+  }
+
+  /* Última linha não precisa de borda */
+  .voters-table tbody tr:last-child {
+    border-bottom: none;
+  }
+
+  /* Melhorar espaçamento no header da opção */
+  .option-header {
+    padding: 10px 12px;
+  }
+
+  /* Garantir que apenas os estilos acima sejam aplicados em mobile */
+}
+
+/* Atualizar as regras para telas pequenas */
+@media (max-width: 768px) {
+  /* Regras de exibição para tabela em telas pequenas */
+  .voters-table thead {
+    display: none;
+  }
+
+  .voters-table tbody tr {
+    display: block;
+    border-bottom: 1px solid #e0e0e0;
+    padding: 10px 15px;
+  }
+
+  .voters-table tbody tr:last-child {
+    border-bottom: none;
+  }
+
+  /* Esconder todos os campos por padrão */
+  .voters-table tbody td {
+    display: none;
+    border: none;
+  }
+
+  /* Mostrar apenas a primeira célula com o nome */
+  .voters-table tbody td:first-child {
+    display: block;
+    width: 100%;
+    padding: 0;
+  }
+
+  /* Esconder avatar e ajustar nome */
+  .voter-avatar {
+    display: none !important;
+  }
+
+  /* Remover labels antes das células */
+  .voters-table td:before {
+    display: none;
+  }
+
+  /* Ajustar a exibição do nome */
+  .voter-name {
+    padding: 0;
+    margin: 0;
+    font-size: 14px;
+  }
+
+  /* Ajustar espaçamento da informação */
+  .voter-info {
+    padding: 0;
+    margin: 0;
+    display: block;
+  }
+
+  /* Outros ajustes de espaço */
+  .option-header {
+    padding: 10px 15px;
+  }
 }
