@@ -68,12 +68,14 @@ const VotingResultChart = ({ voting, chartType = "pie", height = 200 }) => {
   };
 
   return (
-    <div style={{ height: `${height}px` }}>
-      {chartType === "pie" ? (
-        <Pie data={chartData} options={chartOptions} />
-      ) : (
-        <Bar data={chartData} options={chartOptions} />
-      )}
+    <div style={{ height: `${height}px` }} className="chart-container">
+      <div className="chart-area">
+        {chartType === "pie" ? (
+          <Pie data={chartData} options={chartOptions} />
+        ) : (
+          <Bar data={chartData} options={chartOptions} />
+        )}
+      </div>
     </div>
   );
 };

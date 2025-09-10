@@ -3,7 +3,7 @@
   margin-top: 28px;
   border-top: 1px solid #e9ecef;
   padding-top: 20px;
-  width: 150%; /* Garantir que use toda a largura disponível */
+  width: 100%;
 }
 
 .details-title {
@@ -97,10 +97,10 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 15px;  /* Aumentado o padding vertical de 10px para 12px */
+  padding: 12px 15px; /* Aumentado o padding vertical de 10px para 12px */
   font-weight: 500;
   color: #fff;
-  line-height: 1.4;   /* Adicionado para melhorar alinhamento de texto */
+  line-height: 1.4; /* Adicionado para melhorar alinhamento de texto */
 }
 
 /* Cores aprimoradas para cabeçalhos de opções padrão */
@@ -149,20 +149,20 @@
 .option-label {
   display: flex;
   align-items: center;
-  height: 24px;        /* Altura fixa para garantir centralização */
+  height: 24px; /* Altura fixa para garantir centralização */
 }
 
 .vote-count {
   font-size: 0.9em;
   opacity: 0.9;
   background-color: rgba(0, 0, 0, 0.06);
-  padding: 4px 12px;    /* Ajustado o padding para melhor alinhamento */
+  padding: 4px 12px; /* Ajustado o padding para melhor alinhamento */
   border-radius: 16px;
   color: #495057;
   font-weight: 500;
-  display: flex;        /* Adicionado para garantir centralização vertical */
+  display: flex; /* Adicionado para garantir centralização vertical */
   align-items: center;
-  height: 20px;         /* Altura fixa para melhor alinhamento */
+  height: 20px; /* Altura fixa para melhor alinhamento */
 }
 
 .voters-table {

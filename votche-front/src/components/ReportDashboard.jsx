@@ -1,33 +1,23 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { useLocation, useParams, useNavigate } from "react-router-dom";
-import { jsPDF } from "jspdf";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
-  FaCalendarAlt,
-  FaUsers,
-  FaChartBar,
-  FaFileDownload,
-  FaAngleDown,
-  FaAngleUp,
-  FaCheckCircle,
-  FaChartPie,
-  FaDownload,
-  FaClock,
-  FaUser,
-  FaSearch,
-  FaArrowLeft,
-} from "react-icons/fa";
+  useParams,
+  useSearchParams,
+  useNavigate,
+  useLocation,
+} from "react-router-dom";
+import { toast } from "react-toastify"; // Adicione esta linha
 import {
   getUserMeetings,
-  getUserParticipatingMeetings, // Adicionar esta importação
   listenToVotingsInMeeting,
   getMeetingDetails,
   getMeetingVotings,
   checkReportAccess,
+  registerMinervaVote, // Adicione esta linha
+  getUserParticipatingMeetings,
 } from "../firebase";
-// Corrigir a importação do contexto de autenticação
 import { useAuth } from "../context/AuthContext";
-// Adicionar a importação do VotingResultChart que acabamos de criar
 import VotingResultChart from "./VotingResultChart";
+import VotingResult from "./VotingResult";
 import "../styles/ReportDashboard.css";
 import VotingDetailsTable from "./VotingDetailsTable";
 import {
@@ -40,8 +30,21 @@ import {
   BarElement,
 } from "chart.js";
 import { Pie, Bar } from "react-chartjs-2";
+import {
+  FaSearch,
+  FaChartBar,
+  FaClock,
+  FaCalendarAlt,
+  FaUsers,
+  FaCheckCircle,
+  FaDownload,
+  FaArrowLeft,
+  FaFileDownload,
+} from "react-icons/fa";
+import { Button, Typography, Paper, Box, Chip, Divider } from "@mui/material";
+import { jsPDF } from "jspdf";
 
-// Registre os componentes necessários
+
 ChartJS.register(
   ArcElement,
   Tooltip,
@@ -60,7 +63,6 @@ const ReportDashboard = ({ user }) => {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
 
-  // Estado inicial
   const [meetings, setMeetings] = useState([]);
   const [selectedMeeting, setSelectedMeeting] = useState(null);
   const [votings, setVotings] = useState([]);
@@ -72,24 +74,18 @@ const ReportDashboard = ({ user }) => {
   const [generatingPDF, setGeneratingPDF] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Carregar reuniões do usuário
   useEffect(() => {
     const loadUserMeetings = async () => {
       try {
         setLoading(true);
 
-        // Carregar reuniões que o usuário criou
         const createdMeetings = await getUserMeetings(user.uid);
-
-        // Carregar reuniões que o usuário participa (incluindo encerradas)
         const participatingMeetings = await getUserParticipatingMeetings(
           user.uid
         );
 
-        // Combinar as listas, removendo duplicados
         const allMeetings = [...createdMeetings];
 
-        // Adicionar apenas reuniões participantes que não estão na lista de criadas
         for (const meeting of participatingMeetings) {
           if (!allMeetings.some((m) => m.id === meeting.id)) {
             allMeetings.push(meeting);
@@ -98,7 +94,6 @@ const ReportDashboard = ({ user }) => {
 
         setMeetings(allMeetings);
 
-        // Expandir automaticamente a reunião se indicado na URL
         if (focusMeetingId) {
           const targetMeeting = allMeetings.find(
             (m) => m.id === focusMeetingId
@@ -120,7 +115,6 @@ const ReportDashboard = ({ user }) => {
     }
   }, [user, focusMeetingId]);
 
-  // Carregar votações para uma reunião expandida
   useEffect(() => {
     if (!expandedMeeting) return;
 
@@ -133,9 +127,7 @@ const ReportDashboard = ({ user }) => {
             [expandedMeeting.id]: votings,
           }));
 
-          // Se há um ID de votação específico para destacar
           if (focusVotingId && votings.some((v) => v.id === focusVotingId)) {
-            // Implementar lógica para destacar a votação específica
             const votingElement = document.getElementById(
               `voting-${focusVotingId}`
             );
@@ -157,7 +149,6 @@ const ReportDashboard = ({ user }) => {
     return () => unsubscribe && unsubscribe();
   }, [expandedMeeting, focusVotingId]);
 
-  // Alternar expansão de uma reunião
   const toggleMeetingExpansion = (meeting) => {
     if (expandedMeeting && expandedMeeting.id === meeting.id) {
       setExpandedMeeting(null);
@@ -166,7 +157,6 @@ const ReportDashboard = ({ user }) => {
     }
   };
 
-  // Filtrar reuniões por termo de busca
   const filteredMeetings = meetings.filter(
     (meeting) =>
       meeting.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -174,7 +164,6 @@ const ReportDashboard = ({ user }) => {
         meeting.description.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  // Renderizar gráficos com Chart.js
   const renderChart = useCallback((stats, type = "pie", height = 200) => {
     if (
       !stats ||
@@ -273,7 +262,6 @@ const ReportDashboard = ({ user }) => {
     );
   }, []);
 
-  // Formatar data para exibição
   const formatDate = (dateStr, timeStr) => {
     try {
       const date = new Date(`${dateStr}T${timeStr}`);
@@ -289,20 +277,25 @@ const ReportDashboard = ({ user }) => {
     }
   };
 
-  // Calcular estatísticas para uma votação
   const calculateVotingStats = (voting) => {
-    if (!voting) return { options: [], total: 0, winner: null, maxVotes: 0 };
+    if (!voting)
+      return {
+        options: [],
+        total: 0,
+        winner: null,
+        maxVotes: 0,
+        isTie: false,
+        winners: [],
+      };
 
-    // Verificar se é uma votação anônima
     const isAnonymous = voting.anonymous === true;
 
-    // Extrair opções e votos
     const options = [];
     let totalVotes = 0;
     let winner = null;
     let maxVotes = 0;
+    let winners = [];
 
-    // Processar opções da votação
     if (voting.options && typeof voting.options === "object") {
       Object.entries(voting.options).forEach(([option, votes]) => {
         const voteCount = votes || 0;
@@ -312,20 +305,31 @@ const ReportDashboard = ({ user }) => {
         if (voteCount > maxVotes) {
           maxVotes = voteCount;
           winner = option;
+          winners = [option];
+        } else if (voteCount === maxVotes && voteCount > 0) {
+          winners.push(option);
         }
       });
     }
 
-    return { options, total: totalVotes, winner, maxVotes, isAnonymous };
+    const isTie = winners.length > 1;
+
+    return {
+      options,
+      total: totalVotes,
+      winner,
+      maxVotes,
+      isAnonymous,
+      isTie,
+      winners,
+    };
   };
 
-  // Baixar relatório em PDF
   const downloadPDF = async (meeting) => {
     try {
       setGeneratingPDF(true);
       const votings = meetingVotings[meeting.id] || [];
 
-      // Criar documento PDF
       const pdf = new jsPDF({
         orientation: "portrait",
         unit: "mm",
@@ -333,36 +337,29 @@ const ReportDashboard = ({ user }) => {
         compress: true,
       });
 
-      // Definir cores e estilos padrão
       const colors = {
-        primary: [30, 163, 74], // Verde primário
-        secondary: [52, 73, 94], // Azul escuro
-        accent: [241, 196, 15], // Amarelo
-        light: [236, 240, 241], // Cinza claro
-        text: [44, 62, 80], // Cor texto
-        textLight: [127, 140, 141], // Cinza para texto secundário
+        primary: [30, 163, 74],
+        secondary: [52, 73, 94],
+        accent: [241, 196, 15],
+        light: [236, 240, 241],
+        text: [44, 62, 80],
+        textLight: [127, 140, 141],
       };
 
-      // Variáveis de controle de posição
-      let y = 30; // Começar mais abaixo para acomodar o header
+      let y = 30;
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
 
-      // Carregar a logo do Votche
       const logoImg = new Image();
       logoImg.src = "/src/assets/votche.png";
 
-      // Função para adicionar cabeçalho em cada página
       const addPageHeader = () => {
-        // Retângulo verde no topo
         pdf.setFillColor(...colors.primary);
         pdf.rect(0, 0, pageWidth, 20, "F");
 
-        // Adicionar a logo no canto superior direito
         try {
           pdf.addImage(logoImg, "PNG", pageWidth - 50, 2, 40, 16);
         } catch (e) {
-          // Fallback se a imagem não carregar
           pdf.setTextColor(255, 255, 255);
           pdf.setFontSize(14);
           pdf.setFont("helvetica", "bold");
@@ -371,26 +368,21 @@ const ReportDashboard = ({ user }) => {
         }
       };
 
-      // Função para adicionar nova página
       const addNewPage = () => {
         pdf.addPage();
-        y = 30; // Começar abaixo do cabeçalho
+        y = 30;
         addPageHeader();
         return y;
       };
 
-      // Adicionar cabeçalho com título
       const addReportHeader = (title) => {
-        // Adicionar header verde com logo
         addPageHeader();
 
-        // Título do relatório
         pdf.setFontSize(16);
         pdf.setTextColor(255, 255, 255);
         pdf.setFont("helvetica", "bold");
         pdf.text(`${title}`, 14, 13);
 
-        // Data do relatório abaixo do header
         pdf.setFontSize(9);
         pdf.setFont("helvetica", "normal");
         pdf.setTextColor(...colors.textLight);
@@ -406,7 +398,6 @@ const ReportDashboard = ({ user }) => {
         pdf.text(`Gerado em ${dateStr} às ${timeStr}`, 14, 24);
       };
 
-      // Adicionar rodapé com paginação
       const addFooter = () => {
         const totalPages = pdf.internal.getNumberOfPages();
         for (let i = 1; i <= totalPages; i++) {
@@ -422,7 +413,6 @@ const ReportDashboard = ({ user }) => {
         }
       };
 
-      // Função para desenhar uma linha divisória
       const addDivider = () => {
         pdf.setDrawColor(220, 220, 220);
         pdf.setLineWidth(0.5);
@@ -430,7 +420,6 @@ const ReportDashboard = ({ user }) => {
         y += 5;
       };
 
-      // Função para adicionar seção com título
       const addSection = (title) => {
         if (y > pageHeight - 40) y = addNewPage();
 
@@ -446,7 +435,6 @@ const ReportDashboard = ({ user }) => {
         y += 8;
       };
 
-      // Adicionar informação com rótulo e valor
       const addInfoItem = (label, value, indent = 0) => {
         if (y > pageHeight - 20) y = addNewPage();
 
@@ -462,24 +450,19 @@ const ReportDashboard = ({ user }) => {
         y += 6;
       };
 
-      // Função para criar cabeçalho de opção com texto centralizado verticalmente
       const createOptionHeader = (text, voteCount, headerY) => {
-        const headerHeight = 12; // Altura aumentada para mais espaço
+        const headerHeight = 12;
 
-        // Retângulo de fundo cinza claro
         pdf.setFillColor(240, 240, 240);
         pdf.rect(14, headerY, pageWidth - 28, headerHeight, "F");
 
-        // Texto principal centralizado verticalmente
         pdf.setFontSize(11);
         pdf.setFont("helvetica", "bold");
         pdf.setTextColor(...colors.secondary);
 
-        // Calcular posição Y para texto centralizado (ajustado para melhor centralização)
-        const textY = headerY + headerHeight / 2 + 1; // Ajuste fino para centralização vertical
+        const textY = headerY + headerHeight / 2 + 1;
         pdf.text(`Opção: ${text}`, 20, textY);
 
-        // Contagem de votos à direita
         pdf.setFont("helvetica", "normal");
         pdf.setTextColor(...colors.textLight);
         pdf.text(
@@ -489,16 +472,14 @@ const ReportDashboard = ({ user }) => {
           { align: "right" }
         );
 
-        return headerY + headerHeight + 3; // Retornar nova posição Y com espaço adicional
+        return headerY + headerHeight + 3;
       };
 
-      // Função para criar tabela
       const createTable = (headers, data, widths, startY) => {
         const tableTop = startY || y;
         let currentY = tableTop;
-        const rowHeight = 10; // Altura de linha aumentada
+        const rowHeight = 10;
 
-        // Cabeçalho da tabela com melhor centralização
         pdf.setFillColor(240, 240, 240);
         pdf.rect(14, currentY - 5, pageWidth - 28, rowHeight + 2, "F");
 
@@ -506,7 +487,6 @@ const ReportDashboard = ({ user }) => {
         pdf.setFont("helvetica", "bold");
         pdf.setTextColor(...colors.secondary);
 
-        // Centralizar verticalmente o texto do cabeçalho
         let xPos = 14;
         headers.forEach((header, i) => {
           pdf.text(header, xPos + 4, currentY + rowHeight / 2 - 1);
@@ -515,21 +495,17 @@ const ReportDashboard = ({ user }) => {
 
         currentY += rowHeight + 2;
 
-        // Linhas da tabela
         pdf.setFont("helvetica", "normal");
         pdf.setTextColor(...colors.text);
 
-        // Linhas alternadas
         let isAlternate = false;
 
         data.forEach((row, rowIndex) => {
           if (currentY > pageHeight - 20) {
-            // Adicionar nova página se necessário
             pdf.addPage();
             addPageHeader();
-            currentY = 40; // Começar abaixo do cabeçalho
+            currentY = 40;
 
-            // Repetir cabeçalho na nova página
             pdf.setFillColor(240, 240, 240);
             pdf.rect(14, currentY - 5, pageWidth - 28, rowHeight + 2, "F");
 
@@ -548,14 +524,12 @@ const ReportDashboard = ({ user }) => {
             pdf.setTextColor(...colors.text);
           }
 
-          // Fundo alternado
           if (isAlternate) {
             pdf.setFillColor(248, 248, 248);
             pdf.rect(14, currentY - 5, pageWidth - 28, rowHeight, "F");
           }
           isAlternate = !isAlternate;
 
-          // Dados da linha com texto centralizado verticalmente
           let xRowPos = 14;
           row.forEach((cell, i) => {
             pdf.text(String(cell), xRowPos + 4, currentY + rowHeight / 2 - 1);
@@ -568,27 +542,22 @@ const ReportDashboard = ({ user }) => {
         return currentY + 5;
       };
 
-      // Converter um gráfico para imagem
       const chartToImage = async (stats, width = 120, height = 100) => {
         return new Promise((resolve) => {
           try {
-            // Criar um canvas temporário
             const canvas = document.createElement("canvas");
-            canvas.width = width * 2; // Multiplicar por 2 para melhor resolução
+            canvas.width = width * 2;
             canvas.height = height * 2;
             const ctx = canvas.getContext("2d");
 
-            // Desenhar um gráfico de pizza
             if (stats.options && stats.options.length > 0) {
               const total = stats.total || 1;
               const options = stats.options || [];
 
-              // Coordenadas do centro e raio
               const centerX = canvas.width / 2;
               const centerY = canvas.height / 2;
               const radius = Math.min(centerX, centerY) - 20;
 
-              // Cores para o gráfico
               const chartColors = [
                 "#3498db",
                 "#2ecc71",
@@ -602,7 +571,6 @@ const ReportDashboard = ({ user }) => {
                 "#c0392b",
               ];
 
-              // Desenhar cada fatia
               let startAngle = 0;
               options.forEach((option, index) => {
                 const sliceAngle = (2 * Math.PI * option.votes) / total;
@@ -621,11 +589,9 @@ const ReportDashboard = ({ user }) => {
                 ctx.fillStyle = chartColors[index % chartColors.length];
                 ctx.fill();
 
-                // Preparar para próxima fatia
                 startAngle += sliceAngle;
               });
 
-              // Adicionar legenda
               let legendY = centerY + radius + 30;
               options.forEach((option, index) => {
                 const color = chartColors[index % chartColors.length];
@@ -634,6 +600,7 @@ const ReportDashboard = ({ user }) => {
 
                 ctx.fillStyle = "#000";
                 ctx.font = "14px Arial";
+                ctx.textAlign = "left";
                 const percentage = Math.round((option.votes / total) * 100);
                 const legendText = `${option.label}: ${option.votes} (${percentage}%)`;
                 ctx.fillText(legendText, 40, legendY);
@@ -641,7 +608,6 @@ const ReportDashboard = ({ user }) => {
                 legendY += 20;
               });
             } else {
-              // Se não houver dados, mostrar mensagem
               ctx.fillStyle = "#f8f9fa";
               ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -655,7 +621,6 @@ const ReportDashboard = ({ user }) => {
               );
             }
 
-            // Converter para imagem
             resolve(canvas.toDataURL("image/png"));
           } catch (error) {
             console.error("Erro ao gerar gráfico:", error);
@@ -664,9 +629,6 @@ const ReportDashboard = ({ user }) => {
         });
       };
 
-      // ===== INÍCIO DA GERAÇÃO DO RELATÓRIO =====
-
-      // 1. Cabeçalho e informações da reunião
       addReportHeader(`Relatório: ${meeting.name}`);
 
       addSection("Informações da Reunião");
@@ -698,13 +660,11 @@ const ReportDashboard = ({ user }) => {
       y += 5;
       addDivider();
 
-      // 2. Resumo das votações
       if (votings.length > 0) {
         addSection("Resumo das Votações");
 
-        // Tabela de resumo
         const headers = ["Votação", "Status", "Total Votos", "Opção Vencedora"];
-        const widths = [80, 30, 30, 45]; // Ajuste de larguras
+        const widths = [80, 30, 30, 45];
 
         const tableData = votings.map((voting) => {
           const stats = calculateVotingStats(voting);
@@ -727,18 +687,15 @@ const ReportDashboard = ({ user }) => {
         y += 10;
       }
 
-      // 3. Detalhes de cada votação
       if (votings.length > 0) {
         addSection("Detalhes das Votações");
 
-        // Criar uma página para cada votação
         for (let i = 0; i < votings.length; i++) {
           const voting = votings[i];
           const stats = calculateVotingStats(voting);
 
           if (y > pageHeight - 100) y = addNewPage();
 
-          // Título e informações da votação
           pdf.setFontSize(12);
           pdf.setFont("helvetica", "bold");
           pdf.setTextColor(...colors.secondary);
@@ -768,10 +725,8 @@ const ReportDashboard = ({ user }) => {
             y += 10;
           }
 
-          // Adicionar gráfico
           if (stats.total > 0) {
             try {
-              // Transformar gráfico em imagem
               const chartImage = await chartToImage(stats, 150, 100);
               if (chartImage) {
                 pdf.addImage(chartImage, "PNG", 14, y, 80, 60);
@@ -782,7 +737,6 @@ const ReportDashboard = ({ user }) => {
             }
           }
 
-          // Tabela de resultados
           if (stats.options.length > 0) {
             pdf.setFontSize(11);
             pdf.setFont("helvetica", "bold");
@@ -802,14 +756,12 @@ const ReportDashboard = ({ user }) => {
               return [option.label, option.votes.toString(), `${percentage}%`];
             });
 
-            // Adicionar linha de total
             optionData.push(["Total", stats.total.toString(), "100%"]);
 
             y = createTable(optionHeaders, optionData, optionWidths, y);
             y += 10;
           }
 
-          // Adicionar detalhes dos votantes se não for anônimo
           if (!stats.isAnonymous && voting.votes) {
             if (y > pageHeight - 40) y = addNewPage();
 
@@ -819,21 +771,17 @@ const ReportDashboard = ({ user }) => {
             pdf.text("Detalhes dos Votantes:", 14, y);
             y += 7;
 
-            // Organizar votos por opção
             const votesByOption = {};
 
-            // Inicializar opções
             stats.options.forEach((option) => {
               votesByOption[option.label] = [];
             });
 
-            // Agrupar votantes por opção
             Object.entries(voting.votes || {}).forEach(([userId, option]) => {
               if (!votesByOption[option]) {
                 votesByOption[option] = [];
               }
 
-              // Obter detalhes do participante
               const participant = meeting.participants?.[userId] || {};
               const timestamp = voting.voteTimestamps?.[userId] || null;
               const formattedDate = timestamp
@@ -855,12 +803,10 @@ const ReportDashboard = ({ user }) => {
               });
             });
 
-            // Exibir votantes por opção
             Object.entries(votesByOption).forEach(([option, voters]) => {
               if (voters.length > 0) {
                 if (y > pageHeight - 20) y = addNewPage();
 
-                // Cabeçalho da opção
                 pdf.setFillColor(240, 240, 240);
                 pdf.rect(14, y - 5, pageWidth - 28, 10, "F");
 
@@ -870,7 +816,6 @@ const ReportDashboard = ({ user }) => {
                 pdf.text(`Opção: ${option} (${voters.length} votos)`, 20, y);
                 y += 8;
 
-                // Tabela de votantes
                 if (voters.length > 0) {
                   const voterHeaders = ["Nome", "Email", "Data e hora"];
                   const voterWidths = [80, 70, 40];
@@ -894,7 +839,6 @@ const ReportDashboard = ({ user }) => {
             });
           }
 
-          // Separador entre votações
           y += 5;
           if (i < votings.length - 1) {
             addDivider();
@@ -908,10 +852,8 @@ const ReportDashboard = ({ user }) => {
         pdf.text("Não há votações registradas nesta reunião", 14, y);
       }
 
-      // Adicionar rodapé com paginação
       addFooter();
 
-      // Salvar o PDF com nome formatado
       const filename = `relatório-${meeting.name.replace(/\s+/g, "-")}.pdf`;
       pdf.save(filename);
 
@@ -924,7 +866,6 @@ const ReportDashboard = ({ user }) => {
     }
   };
 
-  // Verificar status de reunião
   const getMeetingStatus = (meeting) => {
     if (!meeting.active) {
       return { text: "Encerrada", class: "status-ended" };
@@ -940,7 +881,6 @@ const ReportDashboard = ({ user }) => {
     }
   };
 
-  // Carregar dados do relatório se reportId estiver presente
   useEffect(() => {
     const loadReportData = async () => {
       if (!currentUser || !reportId) return;
@@ -948,7 +888,6 @@ const ReportDashboard = ({ user }) => {
       try {
         setLoading(true);
 
-        // Verificar acesso
         const userReportsRef = ref(
           database,
           `users/${currentUser.uid}/reportAccess/${reportId}`
@@ -961,11 +900,9 @@ const ReportDashboard = ({ user }) => {
           return;
         }
 
-        // Carregar dados da reunião
         const meetingData = await getMeetingDetails(reportId);
         setMeeting(meetingData);
 
-        // Carregar votações
         const votingsData = await getMeetingVotings(reportId);
         setVotings(votingsData);
       } catch (err) {
@@ -981,7 +918,6 @@ const ReportDashboard = ({ user }) => {
     loadReportData();
   }, [currentUser, reportId]);
 
-  // Verificação de acesso ao relatório se acessado via URL específica
   useEffect(() => {
     const verifyAccess = async () => {
       if (reportId && currentUser) {
@@ -996,7 +932,54 @@ const ReportDashboard = ({ user }) => {
     verifyAccess();
   }, [reportId, currentUser, navigate]);
 
-  // Verificações de segurança antes de renderizar
+  const handleMinervaVote = async (votingId, selectedOption) => {
+    try {
+      if (!meeting || !currentUser) {
+        setError("Informações insuficientes para aplicar o voto de minerva");
+        return;
+      }
+
+      setLoading(true);
+
+      await registerMinervaVote(
+        meeting.id,
+        votingId,
+        selectedOption,
+        currentUser.uid
+      );
+
+      setVotings((prevVotings) =>
+        prevVotings.map((voting) =>
+          voting.id === votingId
+            ? {
+                ...voting,
+                hasMinervaVote: true,
+                minervaVotedBy: currentUser.uid,
+                minervaVotedAt: new Date().toISOString(),
+                minervaOption: selectedOption,
+                officialResult: selectedOption,
+              }
+            : voting
+        )
+      );
+
+      toast.success("Voto de minerva aplicado com sucesso!", {
+        position: "top-right",
+        autoClose: 3000,
+      });
+    } catch (error) {
+      console.error("Erro ao aplicar voto de minerva:", error);
+      setError(error.message || "Erro ao aplicar voto de minerva");
+
+      toast.error(error.message || "Erro ao aplicar voto de minerva", {
+        position: "top-right",
+        autoClose: 5000,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="loading-container">
@@ -1033,7 +1016,6 @@ const ReportDashboard = ({ user }) => {
     );
   }
 
-  // Resto do componente
   return (
     <div className="report-dashboard-container">
       <div className="dashboard-header">
@@ -1110,7 +1092,6 @@ const ReportDashboard = ({ user }) => {
                     {isExpanded && (
                       <div className="meeting-details-panel">
                         <div className="meeting-stats">
-                          {/* Estatísticas melhoradas */}
                           <div className="stat-card">
                             <FaUsers className="stat-icon" />
                             <div className="stat-content">
@@ -1160,7 +1141,6 @@ const ReportDashboard = ({ user }) => {
                           </div>
                         </div>
 
-                        {/* Lista de votações melhorada */}
                         <div className="votings-list">
                           {votings.length === 0 ? (
                             <div className="no-votings-message">
@@ -1200,23 +1180,21 @@ const ReportDashboard = ({ user }) => {
                                   </div>
 
                                   <div className="voting-results">
-                                    {/* Gráfico usando a função renderChart */}
                                     <div className="voting-chart">
                                       {renderChart(stats, chartType)}
                                     </div>
 
-                                    {/* Tabela de resultados melhorada */}
                                     <div className="voting-options-table">
                                       <table>
                                         <thead>
                                           <tr>
                                             <th>Opção</th>
                                             <th>Votos</th>
-                                            <th>%</th>
+                                            <th>Percentual</th>
                                           </tr>
                                         </thead>
                                         <tbody>
-                                          {stats.options.map((option, idx) => {
+                                          {stats.options.map((option) => {
                                             const percentage =
                                               stats.total > 0
                                                 ? Math.round(
@@ -1228,7 +1206,7 @@ const ReportDashboard = ({ user }) => {
 
                                             return (
                                               <tr
-                                                key={idx}
+                                                key={option.label}
                                                 className={
                                                   option.label === stats.winner
                                                     ? "winner"
@@ -1242,28 +1220,28 @@ const ReportDashboard = ({ user }) => {
                                             );
                                           })}
                                         </tbody>
-                                        {stats.total > 0 && (
-                                          <tfoot>
-                                            <tr>
-                                              <td>Total</td>
-                                              <td>{stats.total}</td>
-                                              <td>100%</td>
-                                            </tr>
-                                          </tfoot>
-                                        )}
                                       </table>
                                     </div>
 
-                                    {/* Resto dos elementos do relatório */}
-                                    <div className="voting-report-container">
-                                      {/* Usar o componente VotingDetailsTable sem título adicional */}
-                                      <VotingDetailsTable
+                                    {!voting.active && stats.total > 0 && (
+                                      <VotingResult
+                                        stats={stats}
                                         voting={voting}
-                                        participants={
-                                          meeting?.participants || {}
+                                        isOwner={
+                                          currentUser &&
+                                          currentUser.uid === meeting.createdBy
                                         }
+                                        votingId={voting.id}
+                                        onMinervaVote={handleMinervaVote}
                                       />
-                                    </div>
+                                    )}
+
+                                    <VotingDetailsTable
+                                      voting={voting}
+                                      participants={meeting.participants || {}}
+                                      meeting={meeting}
+                                      currentUser={currentUser}
+                                    />
                                   </div>
                                 </div>
                               );
@@ -1280,7 +1258,6 @@ const ReportDashboard = ({ user }) => {
         )}
       </div>
 
-      {/* Se reportId estiver presente, mostrar detalhes do relatório */}
       {reportId && (
         <div className="report-details-container">
           <div className="report-header">
@@ -1387,6 +1364,37 @@ const ReportDashboard = ({ user }) => {
                     {new Date(voting.createdAt).toLocaleString("pt-BR")}
                   </Typography>
                 </Box>
+
+                {voting.hasMinervaVote && (
+                  <Box
+                    sx={{ mt: 2, p: 2, bgcolor: "#e3f2fd", borderRadius: 1 }}
+                  >
+                    <Typography
+                      variant="subtitle1"
+                      fontWeight="bold"
+                      color="primary"
+                    >
+                      Resultado após voto de minerva:
+                    </Typography>
+                    <Typography variant="body2">
+                      Opção vencedora:{" "}
+                      <strong>
+                        {voting.minervaOption || voting.officialResult}
+                      </strong>
+                    </Typography>
+                    {voting.minervaVotedBy &&
+                      meeting.participants?.[voting.minervaVotedBy] && (
+                        <Typography
+                          variant="body2"
+                          sx={{ fontStyle: "italic", mt: 1 }}
+                        >
+                          Voto de minerva dado por:{" "}
+                          {meeting.participants[voting.minervaVotedBy]
+                            .displayName || "Usuário"}
+                        </Typography>
+                      )}
+                  </Box>
+                )}
               </Paper>
             ))
           )}

@@ -36,6 +36,8 @@ import Sidebar from "./components/Sidebar";
 import Topbar from "./components/NavigationBar";
 import ReportDashboard from "./components/ReportDashboard";
 import DirectJoinWrapper from "./components/DirectJoinWrapper";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 // Este componente terá acesso aos hooks do Router
 function AppContent() {
@@ -352,14 +354,17 @@ function AppContent() {
 // Este componente apenas configura o Router e a autenticação
 function App() {
   return (
-    <Router>
-      <AuthProvider>
-        <Routes>
-          <Route path="/*" element={<AppContent />} />
-          {/* Outras rotas específicas podem vir aqui */}
-        </Routes>
-      </AuthProvider>
-    </Router>
+    <>
+      <Router>
+        <AuthProvider>
+          <Routes>
+            <Route path="/*" element={<AppContent />} />
+            {/* Outras rotas específicas podem vir aqui */}
+          </Routes>
+        </AuthProvider>
+      </Router>
+      <ToastContainer />
+    </>
   );
 }
 

@@ -1,0 +1,143 @@
+.voting-result-container {
+  margin: 20px 0;
+  padding: 15px;
+  border-radius: 8px;
+  background-color: #f8f9fa;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+/* Estilo para resultado com vencedor - sem borda lateral */
+.voting-winner-result {
+  padding: 12px;
+  background-color: rgba(40, 167, 69, 0.05);
+  border-radius: 8px;
+}
+
+.winner-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+  color: #28a745;
+}
+
+.winner-header h4 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.winner-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: white;
+  padding: 10px 15px;
+  border-radius: 6px;
+  margin-top: 5px;
+  border: 1px solid rgba(40, 167, 69, 0.2);
+}
+
+.winner-option strong {
+  font-size: 1.1rem;
+  color: #212529;
+}
+
+.winner-option span {
+  background-color: #28a745;
+  color: white;
+  padding: 5px 10px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+}
+
+/* Estilo para empate - sem borda lateral */
+.voting-tie-result {
+  padding: 12px;
+  background-color: rgba(255, 193, 7, 0.05);
+  border-radius: 8px;
+}
+
+.tie-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+  color: #856404;
+}
+
+.tie-header h4 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.winning-options {
+  list-style: none;
+  padding: 0;
+  margin: 10px 0;
+}
+
+.winning-options li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 15px;
+  margin-bottom: 8px;
+  background-color: white;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 193, 7, 0.2);
+}
+
+.winning-options li strong {
+  font-size: 1.1rem;
+}
+
+.winning-options li span {
+  background-color: #ffc107;
+  color: #212529;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+}
+
+/* Voto de Minerva - manter o design atual mas sem borda lateral */
+.voting-minerva-result {
+  padding: 12px;
+  background-color: rgba(0, 86, 179, 0.05);
+  border-radius: 8px;
+}
+
+/* Adicionar ao arquivo existente */
+
+.minerva-action {
+  display: flex;
+  justify-content: center;
+  margin-top: 16px;
+}
+
+.minerva-vote-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #0056b3;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 16px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.minerva-vote-btn:hover {
+  background-color: #004494;
+  transform: translateY(-1px);
+}
+
+.minerva-vote-btn:active {
+  transform: translateY(0);
+}
+
+.minerva-btn-icon {
+  font-size: 1rem;
+}

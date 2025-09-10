@@ -666,7 +666,7 @@ const registerVoteInMeeting = async (meetingId, votingId, option, userId) => {
   }
 };
 
-// Função para encerrar uma votação
+// Função para encerrar uma votação - adicionar cálculo e registro do resultado
 const endVoting = async (meetingId, votingId, userId) => {
   try {
     // Verificar se o usuário é o criador da reunião
@@ -683,14 +683,150 @@ const endVoting = async (meetingId, votingId, userId) => {
       throw new Error("Apenas o criador da reunião pode encerrar votações");
     }
 
-    // Atualizar status da votação
-    await update(ref(database, `meetings/${meetingId}/votings/${votingId}`), {
-      active: false,
-    });
+    // Obter dados da votação
+    const votingRef = ref(
+      database,
+      `meetings/${meetingId}/votings/${votingId}`
+    );
+    const votingSnapshot = await get(votingRef);
 
+    if (!votingSnapshot.exists()) {
+      throw new Error("Votação não encontrada");
+    }
+
+    const votingData = votingSnapshot.val();
+
+    // Calcular resultado da votação
+    const result = calculateVotingResult(votingData);
+
+    // Atualizar status da votação com os resultados
+    const updates = {
+      active: false,
+      endedAt: Date.now(),
+      endedBy: userId,
+      // Novos campos com os resultados
+      winningOption: result.isTie ? null : result.winner,
+      isTie: result.isTie,
+      winners: result.winners,
+      hasMinervaVote: false,
+      maxVotes: result.maxVotes,
+      // Registrar resultado oficial (inicialmente igual ao resultado do cálculo)
+      officialResult: result.isTie ? null : result.winner,
+    };
+
+    await update(
+      ref(database, `meetings/${meetingId}/votings/${votingId}`),
+      updates
+    );
     return true;
   } catch (error) {
     console.error("Erro ao encerrar votação:", error);
+    throw error;
+  }
+};
+
+// Função auxiliar para calcular o resultado da votação
+const calculateVotingResult = (votingData) => {
+  const options = votingData.options || {};
+  let maxVotes = 0;
+  let winner = null;
+  let winners = [];
+
+  // Encontrar o maior número de votos e as opções com esse número
+  Object.entries(options).forEach(([option, votes]) => {
+    const voteCount = votes || 0;
+
+    if (voteCount > maxVotes) {
+      maxVotes = voteCount;
+      winner = option;
+      winners = [option];
+    } else if (voteCount === maxVotes && voteCount > 0) {
+      winners.push(option);
+    }
+  });
+
+  // Verificar se há empate
+  const isTie = winners.length > 1;
+
+  return {
+    winner,
+    winners,
+    isTie,
+    maxVotes,
+  };
+};
+
+// Nova função para registrar voto de minerva
+const registerMinervaVote = async (
+  meetingId,
+  votingId,
+  selectedOption,
+  userId
+) => {
+  try {
+    // Verificar se o usuário é o criador da reunião
+    const meetingRef = ref(database, `meetings/${meetingId}`);
+    const meetingSnapshot = await get(meetingRef);
+
+    if (!meetingSnapshot.exists()) {
+      throw new Error("Reunião não encontrada");
+    }
+
+    const meetingData = meetingSnapshot.val();
+
+    if (meetingData.createdBy !== userId) {
+      throw new Error(
+        "Apenas o criador da reunião pode aplicar voto de minerva"
+      );
+    }
+
+    // Verificar se a votação existe e está encerrada
+    const votingRef = ref(
+      database,
+      `meetings/${meetingId}/votings/${votingId}`
+    );
+    const votingSnapshot = await get(votingRef);
+
+    if (!votingSnapshot.exists()) {
+      throw new Error("Votação não encontrada");
+    }
+
+    const votingData = votingSnapshot.val();
+
+    // Verificar se a votação está inativa (encerrada)
+    if (votingData.active) {
+      throw new Error(
+        "O voto de minerva só pode ser aplicado em votações encerradas"
+      );
+    }
+
+    // Verificar se há empate
+    if (!votingData.isTie) {
+      throw new Error(
+        "O voto de minerva só pode ser aplicado em caso de empate"
+      );
+    }
+
+    // Verificar se a opção escolhida é uma das opções empatadas
+    if (!votingData.winners || !votingData.winners.includes(selectedOption)) {
+      throw new Error(
+        "O voto de minerva deve escolher uma das opções empatadas"
+      );
+    }
+
+    // Atualizar a votação com o voto de minerva
+    const updates = {
+      hasMinervaVote: true,
+      minervaVotedBy: userId,
+      minervaVotedAt: Date.now(),
+      minervaOption: selectedOption,
+      officialResult: selectedOption, // Definir o resultado oficial
+    };
+
+    await update(votingRef, updates);
+    return true;
+  } catch (error) {
+    console.error("Erro ao registrar voto de minerva:", error);
     throw error;
   }
 };
@@ -1105,21 +1241,22 @@ export {
   joinMeetingByPassword,
   archiveMeeting,
   unarchiveMeeting,
-  deleteMeeting, 
+  deleteMeeting,
   getUserArchivedMeetings,
   getUserParticipatingMeetings,
   getMeetingDetails,
   getMeetingVotings,
   checkReportAccess,
   generateMeetingPassword,
-  createVotingInMeeting,  // Função necessária para MeetingSession.jsx
+  createVotingInMeeting, // Função necessária para MeetingSession.jsx
   registerVoteInMeeting,
-  endMeeting, 
+  endMeeting,
   endVoting,
   listenToMeeting,
-  listenToVotingsInMeeting,  // Corrigido o nome (era Vootings)
+  listenToVotingsInMeeting,
   leaveMeeting,
-  getUserAvailableReports
+  getUserAvailableReports,
+  registerMinervaVote,
 };
 
 export default app;

@@ -3,12 +3,14 @@ import { FaChevronDown, FaChevronUp, FaClock } from "react-icons/fa";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import "../styles/VotingDetailsTable.css";
+import VotingResult from "./VotingResult";
 
 const VotingDetailsTable = ({
   voting,
   participants,
   meeting,
   setGeneratingPDF,
+  currentUser,
 }) => {
   const [showDetails, setShowDetails] = useState(true);
 
@@ -16,6 +18,13 @@ const VotingDetailsTable = ({
   if (!voting || !voting.votes || Object.keys(voting.votes).length === 0) {
     return null;
   }
+
+  // Função para lidar com o voto de minerva
+  const handleMinervaVote = (votingId, selectedOption) => {
+    console.log(`Voto de Minerva na votação ${votingId}: ${selectedOption}`);
+    // A implementação completa será adicionada mais tarde
+    // Poderia ser integrada com uma chamada Firebase aqui
+  };
 
   // Verificar se é um tipo de votação padrão (concordo, discordo, me abstenho)
   const isStandardVoting = () => {
@@ -577,6 +586,53 @@ const VotingDetailsTable = ({
             }
           }
 
+          // Adicionar informação de vencedor ou empate no PDF
+          if (stats.total > 0) {
+            y += 10;
+
+            if (stats.isTie) {
+              pdf.setFontSize(12);
+              pdf.setFont("helvetica", "bold");
+              pdf.setTextColor(211, 84, 0); // Cor de alerta para empate
+              pdf.text("Resultado: Empate técnico entre:", 14, y);
+              y += 8;
+
+              // Listar as opções empatadas
+              stats.winners.forEach((option) => {
+                pdf.setFontSize(11);
+                pdf.setFont("helvetica", "normal");
+                pdf.text(
+                  `• ${option} (${stats.maxVotes} votos - ${Math.round(
+                    (stats.maxVotes / stats.total) * 100
+                  )}%)`,
+                  20,
+                  y
+                );
+                y += 6;
+              });
+            } else {
+              pdf.setFontSize(12);
+              pdf.setFont("helvetica", "bold");
+              pdf.setTextColor(...colors.primary);
+              pdf.text("Resultado: Opção vencedora", 14, y);
+              y += 8;
+
+              pdf.setFontSize(11);
+              pdf.setFont("helvetica", "normal");
+              const percentage = Math.round(
+                (stats.maxVotes / stats.total) * 100
+              );
+              pdf.text(
+                `${stats.winner} (${stats.maxVotes} votos - ${percentage}%)`,
+                20,
+                y
+              );
+              y += 8;
+            }
+
+            y += 5;
+          }
+
           // Tabela de resultados
           if (stats.options.length > 0) {
             pdf.setFontSize(11);
@@ -710,6 +766,61 @@ const VotingDetailsTable = ({
     } finally {
       setGeneratingPDF(false);
     }
+  };
+
+  // Função para calcular estatísticas de votação
+  const calculateVotingStats = (voting) => {
+    if (!voting)
+      return {
+        options: [],
+        total: 0,
+        winner: null,
+        maxVotes: 0,
+        isTie: false,
+        winners: [],
+      };
+
+    // Verificar se é uma votação anônima
+    const isAnonymous = voting.anonymous === true;
+
+    // Extrair opções e votos
+    const options = [];
+    let totalVotes = 0;
+    let winner = null;
+    let maxVotes = 0;
+    let winners = []; // Array para armazenar todas as opções com votos máximos (para detectar empate)
+
+    // Processar opções da votação
+    if (voting.options && typeof voting.options === "object") {
+      Object.entries(voting.options).forEach(([option, votes]) => {
+        const voteCount = votes || 0;
+        totalVotes += voteCount;
+        options.push({ label: option, votes: voteCount });
+
+        // Verificar se é a opção mais votada
+        if (voteCount > maxVotes) {
+          maxVotes = voteCount;
+          winner = option;
+          winners = [option]; // Resetar lista de vencedores
+        } else if (voteCount === maxVotes && voteCount > 0) {
+          // Se for igual ao máximo atual, adicionar à lista de vencedores (possível empate)
+          winners.push(option);
+        }
+      });
+    }
+
+    // Verificar se há empate (mais de uma opção com votos máximos)
+    const isTie = winners.length > 1;
+
+    return {
+      options,
+      total: totalVotes,
+      winner,
+      maxVotes,
+      isAnonymous,
+      isTie,
+      winners,
+    };
   };
 
   const votesByOption = getVotesByOption();

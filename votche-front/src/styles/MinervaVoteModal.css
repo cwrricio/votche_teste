@@ -1,0 +1,194 @@
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.minerva-modal {
+  background: white;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 500px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.minerva-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.minerva-modal-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.minerva-icon {
+  color: #0056b3;
+  font-size: 1.2rem;
+}
+
+.minerva-modal-title h3 {
+  margin: 0;
+  color: #0056b3;
+  font-size: 1.2rem;
+}
+
+.close-modal-btn {
+  background: none;
+  border: none;
+  color: #6c757d;
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+.minerva-modal-content {
+  padding: 20px;
+}
+
+.minerva-modal-description {
+  margin-top: 0;
+  color: #212529;
+}
+
+.minerva-modal-warning {
+  color: #dc3545;
+  font-weight: 500;
+  margin-top: 12px;
+}
+
+.minerva-options-list {
+  margin-top: 20px;
+}
+
+.minerva-options-list h4 {
+  margin-bottom: 12px;
+  color: #495057;
+  font-size: 1rem;
+}
+
+.minerva-option-item {
+  padding: 12px 16px;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.minerva-option-item:hover {
+  background-color: #f8f9fa;
+}
+
+.minerva-option-item.selected {
+  border-color: #0056b3;
+  background-color: #e6f2ff;
+}
+
+.option-selector {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.option-radio {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #ced4da;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.option-radio .radio-inner {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background-color: transparent;
+  transition: all 0.2s;
+}
+
+.option-radio .radio-inner.checked {
+  background-color: #0056b3;
+}
+
+.minerva-option-item.selected .option-radio {
+  border-color: #0056b3;
+}
+
+.minerva-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 20px;
+  border-top: 1px solid #e9ecef;
+  background-color: #f8f9fa;
+  border-radius: 0 0 8px 8px;
+}
+
+.cancel-btn {
+  padding: 8px 16px;
+  border: 1px solid #ced4da;
+  background-color: white;
+  border-radius: 4px;
+  color: #6c757d;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cancel-btn:hover {
+  background-color: #f8f9fa;
+}
+
+.confirm-btn {
+  padding: 8px 16px;
+  border: none;
+  background-color: #0056b3;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.confirm-btn:hover {
+  background-color: #004494;
+}
+
+.confirm-btn:disabled {
+  background-color: #b3d7ff;
+  cursor: not-allowed;
+}

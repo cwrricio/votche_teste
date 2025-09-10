@@ -348,20 +348,21 @@
 /* Resultados de votação */
 .voting-results {
   padding: 1.25rem;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 1.5rem;
-  align-items: start;
 }
 
 .voting-chart {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: white;
-  padding: 1rem;
+  min-height: 300px;
+  background-color: white;
   border-radius: 8px;
-  height: 300px;
+  padding: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .chart-container {
@@ -424,6 +425,7 @@
   background: white;
   border-radius: 8px;
   padding: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .voting-options-table table {
