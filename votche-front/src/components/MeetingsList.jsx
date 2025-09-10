@@ -203,9 +203,8 @@ function MeetingsList({
             Minhas Reuniões
           </button>
           <button
-            className={`tab-btn ${
-              activeTab === "participating" ? "active" : ""
-            }`}
+            className={`tab-btn ${activeTab === "participating" ? "active" : ""
+              }`}
             onClick={() => setActiveTab("participating")}
           >
             Participando
@@ -223,7 +222,7 @@ function MeetingsList({
           {user && activeTab === "created" && meetings.created.length === 0 && (
             <div className="empty-state">
               <p>Você ainda não criou nenhuma reunião</p>
-              
+
             </div>
           )}
 
@@ -242,92 +241,104 @@ function MeetingsList({
             {/* Exibir reuniões criadas pelo usuário */}
             {user &&
               activeTab === "created" &&
-              meetings.created.map((meeting) => {
-                const status = getMeetingStatus(meeting);
-                const isOwner = user && meeting.createdBy === user.uid;
+              [...meetings.created]
+                .sort((a, b) => {
+                  // Garante que createdAt seja sempre timestamp numérico
+                  const getTime = (m) => {
+                    if (typeof m.createdAt === 'number') return m.createdAt;
+                    if (typeof m.createdAt === 'string') {
+                      const d = new Date(m.createdAt);
+                      if (!isNaN(d.getTime())) return d.getTime();
+                    }
+                    return 0;
+                  };
+                  return getTime(b) - getTime(a);
+                })
+                .map((meeting) => {
+                  const status = getMeetingStatus(meeting);
+                  const isOwner = user && meeting.createdBy === user.uid;
 
-                // datas criadas/encerradas (fallbacks possíveis)
-                const createdAt =
-                  meeting.createdAt ||
-                  (meeting.createdDate && meeting.createdTime
-                    ? `${meeting.createdDate}T${meeting.createdTime}`
-                    : null);
-                const endedAt =
-                  meeting.endedAt ||
-                  (meeting.endDate && meeting.endTime
-                    ? `${meeting.endDate}T${meeting.endTime}`
-                    : null);
+                  // datas criadas/encerradas (fallbacks possíveis)
+                  const createdAt =
+                    meeting.createdAt ||
+                    (meeting.createdDate && meeting.createdTime
+                      ? `${meeting.createdDate}T${meeting.createdTime}`
+                      : null);
+                  const endedAt =
+                    meeting.endedAt ||
+                    (meeting.endDate && meeting.endTime
+                      ? `${meeting.endDate}T${meeting.endTime}`
+                      : null);
 
-                return (
-                  <div
-                    key={meeting.id}
-                    className={`meeting-card ${
-                      !meeting.active
+                  return (
+                    <div
+                      key={meeting.id}
+                      className={`meeting-card ${!meeting.active
                         ? "inactive"
                         : meeting.active
-                        ? "active"
-                        : ""
-                    } ${viewingArchived ? "archived" : ""}`}
-                    onClick={() => onSelectMeeting(meeting)}
-                  >
-                    {isOwner && (
-                      <button
-                        className="archive-btn"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onArchiveMeeting(meeting.id); // Importante: passar meeting.id, não o meeting inteiro
-                        }}
-                        title="Arquivar reunião"
-                      >
-                        <FaArchive />
-                      </button>
-                    )}
-
-                    <div className="meeting-card-content">
-                      <h3 className="meeting-name">{meeting.name}</h3>
-
-                      <div className="meeting-date">
-                        <FaCalendarAlt />
-                        <span>
-                          {formatDate(meeting.startDate, meeting.startTime)}
-                        </span>
-                      </div>
-
-                      {/* Metadados: criado / encerrado */}
-                      <div className="meeting-meta">
-                        {createdAt && (
-                          <div className="meta-item created">
-                            <small>Criado:</small>
-                            <span>{formatDateTime(createdAt)}</span>
-                          </div>
-                        )}
-                        {endedAt && (
-                          <div className="meta-item ended">
-                            <small>Encerra em:</small>
-                            <span>{formatDateTime(endedAt)}</span>
-                          </div>
-                        )}
-                      </div>
-
-                      {meeting.description && (
-                        <div className="meeting-description-container">
-                          <p className="meeting-description">
-                            {meeting.description}
-                          </p>
-                        </div>
-                      )}
-
+                          ? "active"
+                          : ""
+                        } ${viewingArchived ? "archived" : ""}`}
+                      onClick={() => onSelectMeeting(meeting)}
+                    >
                       {isOwner && (
-                        <div className="meeting-password">
-                          <FaKey /> {meeting.password}
-                        </div>
+                        <button
+                          className="archive-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onArchiveMeeting(meeting.id); // Importante: passar meeting.id, não o meeting inteiro
+                          }}
+                          title="Arquivar reunião"
+                        >
+                          <FaArchive />
+                        </button>
                       )}
-                    </div>
 
-                    {renderMeetingFooter(meeting, status, isOwner)}
-                  </div>
-                );
-              })}
+                      <div className="meeting-card-content">
+                        <h3 className="meeting-name">{meeting.name}</h3>
+
+                        <div className="meeting-date">
+                          <FaCalendarAlt />
+                          <span>
+                            {formatDate(meeting.startDate, meeting.startTime)}
+                          </span>
+                        </div>
+
+                        {/* Metadados: criado / encerrado */}
+                        <div className="meeting-meta">
+                          {createdAt && (
+                            <div className="meta-item created">
+                              <small>Criado:</small>
+                              <span>{formatDateTime(createdAt)}</span>
+                            </div>
+                          )}
+                          {endedAt && (
+                            <div className="meta-item ended">
+                              <small>Encerra em:</small>
+                              <span>{formatDateTime(endedAt)}</span>
+                            </div>
+                          )}
+                        </div>
+
+                        {meeting.description && (
+                          <div className="meeting-description-container">
+                            <p className="meeting-description">
+                              {meeting.description}
+                            </p>
+                          </div>
+                        )}
+
+                        {isOwner && (
+                          <div className="meeting-password">
+                            <FaKey /> {meeting.password}
+                          </div>
+                        )}
+                      </div>
+
+                      {renderMeetingFooter(meeting, status, isOwner)}
+                    </div>
+                  );
+                })}
 
             {/* Exibir reuniões que o usuário participa */}
             {user &&
@@ -350,13 +361,12 @@ function MeetingsList({
                 return (
                   <div
                     key={meeting.id}
-                    className={`meeting-card ${
-                      !meeting.active
-                        ? "inactive"
-                        : meeting.active
+                    className={`meeting-card ${!meeting.active
+                      ? "inactive"
+                      : meeting.active
                         ? "active"
                         : ""
-                    }`}
+                      }`}
                     onClick={() => onSelectMeeting(meeting)}
                   >
                     <div className="meeting-card-content">
