@@ -281,6 +281,7 @@ const ReportDashboard = ({ user }) => {
     if (voting && voting.anonymous === true) {
       // eslint-disable-next-line no-console
       console.log("DEBUG voting.options:", voting.options);
+      console.log("DEBUG voting.anonymousOptions:", voting.anonymousOptions);
     }
 
     if (!voting) {
@@ -304,8 +305,39 @@ const ReportDashboard = ({ user }) => {
     let winners = [];
 
     if (isAnonymous) {
-      // Votação anônima: pode ser objeto {opcao: {count, text}} ou array [{label, count}]
-      if (Array.isArray(voting.options)) {
+      // Votação anônima: primeiro verificar se temos anonymousOptions
+      if (
+        voting.anonymousOptions &&
+        typeof voting.anonymousOptions === "object"
+      ) {
+        // Processar anonymousOptions que é onde os votos anônimos são realmente armazenados
+        Object.entries(voting.anonymousOptions).forEach(([option, count]) => {
+          // Para anonymousOptions, count é o número diretamente
+          const voteCount = typeof count === "number" ? count : 0;
+
+          // Buscar o texto original da opção no objeto options
+          let label = option;
+          if (
+            voting.options &&
+            voting.options[option] &&
+            voting.options[option].text
+          ) {
+            label = voting.options[option].text;
+          }
+
+          totalVotes += voteCount;
+          options.push({ label, votes: voteCount });
+
+          if (voteCount > maxVotes) {
+            maxVotes = voteCount;
+            winner = label;
+            winners = [label];
+          } else if (voteCount === maxVotes && voteCount > 0) {
+            winners.push(label);
+          }
+        });
+      } else if (Array.isArray(voting.options)) {
+        // Código existente para options como array
         voting.options.forEach((opt) => {
           const label = opt.label || opt.text || opt.opcao || "Opção";
           const voteCount = typeof opt.count === "number" ? opt.count : 0;
@@ -317,6 +349,7 @@ const ReportDashboard = ({ user }) => {
           }
         });
       } else if (voting.options && typeof voting.options === "object") {
+        // Código existente para options como objeto
         Object.entries(voting.options).forEach(([option, value]) => {
           // value pode ser {count, text}
           const voteCount =
@@ -882,11 +915,10 @@ const ReportDashboard = ({ user }) => {
                 y += 8;
 
                 if (voters.length > 0) {
-                  const voterHeaders = ["Nome", "Email", "Data e hora"];
-                  const voterWidths = [80, 70, 40];
+                  const voterHeaders = ["Email", "Data e hora"];
+                  const voterWidths = [110, 70]; // Ajustado para duas colunas
 
                   const voterData = voters.map((voter) => [
-                    voter.name,
                     voter.email,
                     voter.timestamp,
                   ]);

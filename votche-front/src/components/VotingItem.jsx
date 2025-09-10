@@ -153,8 +153,6 @@ function VotingItem({
 
       <div className="voting-footer">
         <div className="total-votes">
-          <FaVoteYea className="vote-count-icon" />
-          Total: {totalVotes} votos
         </div>
 
         <div className="action-buttons">

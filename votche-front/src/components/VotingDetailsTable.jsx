@@ -56,12 +56,6 @@ const VotingDetailsTable = ({
       });
     }
 
-    // LOG PARA DEPURAÇÃO - remova após resolver o problema
-    console.log("Dados de participantes disponíveis:", {
-      meetingParticipants: meeting?.participants || {},
-      componentParticipants: participants || {},
-    });
-
     // Processar os votos existentes
     Object.entries(voting.votes || {}).forEach(([userId, option]) => {
       if (!votesByOption[option]) {
@@ -79,7 +73,16 @@ const VotingDetailsTable = ({
       // 2. Dados do participante na reunião
       if (meeting?.participants?.[userId]) {
         const participant = meeting.participants[userId];
-        voterData.name = participant.name || participant.fullName;
+
+        // Verificar todas as propriedades possíveis para o nome do usuário
+        voterData.name =
+          participant.name ||
+          participant.displayName ||
+          participant.fullName ||
+          (participant.email && participant.email.includes("@")
+            ? participant.email.split("@")[0]
+            : null);
+
         voterData.email = participant.email;
         voterData.id = participant.id || userId;
       }
@@ -87,21 +90,44 @@ const VotingDetailsTable = ({
       // 3. Dados do participante passados via props
       if (participants?.[userId]) {
         const participant = participants[userId];
-        if (!voterData.name)
-          voterData.name = participant.name || participant.fullName;
+        if (!voterData.name) {
+          voterData.name =
+            participant.name ||
+            participant.displayName ||
+            participant.fullName ||
+            (participant.email && participant.email.includes("@")
+              ? participant.email.split("@")[0]
+              : null);
+        }
         if (!voterData.email) voterData.email = participant.email;
         if (!voterData.id) voterData.id = participant.id || userId;
       }
 
-      // 4. Se ainda não temos nome, use o ID formatado
+      // 4. Se o usuário atual está votando
+      if (currentUser && userId === currentUser.uid) {
+        if (!voterData.name) {
+          voterData.name =
+            currentUser.displayName ||
+            (currentUser.email ? currentUser.email.split("@")[0] : null);
+        }
+        if (!voterData.email) voterData.email = currentUser.email;
+      }
+
+      // 5. Se ainda não temos nome, usar o ID formatado como última opção
       if (!voterData.name) {
         voterData.name = `Usuário ${userId.substring(0, 6)}`;
       }
 
-      // 5. Se o usuário atual está votando
-      if (currentUser && userId === currentUser.uid) {
-        if (!voterData.name) voterData.name = currentUser.displayName;
-        if (!voterData.email) voterData.email = currentUser.email;
+      // Formatar nome para melhor apresentação
+      if (voterData.name && typeof voterData.name === "string") {
+        // Primeira letra maiúscula se começar com minúscula
+        if (voterData.name[0] === voterData.name[0].toLowerCase()) {
+          voterData.name =
+            voterData.name[0].toUpperCase() + voterData.name.slice(1);
+        }
+
+        // Remover caracteres especiais do final
+        voterData.name = voterData.name.replace(/[._-]+$/, "");
       }
 
       votesByOption[option].push({
@@ -160,10 +186,14 @@ const VotingDetailsTable = ({
   };
 
   // Baixar relatório em PDF
-  const downloadPDF = async (meeting) => {
+  const downloadPDF = async () => {
     try {
       setGeneratingPDF(true);
-      const votings = meetingVotings[meeting.id] || [];
+      // Usar o objeto 'meeting' que já está nas props do componente
+      // Não use meetingVotings que não existe nesse componente
+
+      // Crie uma array com apenas a votação atual
+      const votings = [voting];
 
       // Criar documento PDF
       const pdf = new jsPDF({
@@ -351,7 +381,17 @@ const VotingDetailsTable = ({
         // Centralizar verticalmente o texto do cabeçalho
         let xPos = 14;
         headers.forEach((header, i) => {
-          pdf.text(header, xPos + 4, currentY + rowHeight / 2 - 1.5);
+          // Ajuste o alinhamento: primeiro à esquerda, segundo à direita
+          if (i === 0) {
+            pdf.text(header, xPos + 4, currentY + rowHeight / 2 - 1.5);
+          } else {
+            // Alinhar à direita para a data
+            pdf.text(
+              header,
+              xPos + widths[i] - pdf.getTextWidth(header) - 4,
+              currentY + rowHeight / 2 - 1.5
+            );
+          }
           xPos += widths[i];
         });
 
@@ -770,8 +810,10 @@ const VotingDetailsTable = ({
                   ? currentUser.email
                   : "-");
 
-              const formattedDate = timestamp
-                ? new Date(timestamp).toLocaleDateString("pt-BR", {
+              // Obter o timestamp do voto
+              const voteTimestamp = voting.voteTimestamps?.[userId];
+              const formattedDate = voteTimestamp
+                ? new Date(voteTimestamp).toLocaleDateString("pt-BR", {
                     day: "2-digit",
                     month: "2-digit",
                     year: "numeric",
@@ -795,13 +837,15 @@ const VotingDetailsTable = ({
                 // Cabeçalho da opção com centralização vertical
                 y = createOptionHeader(option, voters.length, y);
 
-                // Tabela de votantes
+                // Tabela de votantes - REMOVIDA A COLUNA NOME
                 if (voters.length > 0) {
-                  const voterHeaders = ["Nome", "Email", "Data e hora"];
-                  const voterWidths = [80, 70, 40];
+                  // Remover "Nome" dos cabeçalhos
+                  const voterHeaders = ["Email", "Data e hora"];
+                  // Ajustar larguras para duas colunas apenas
+                  const voterWidths = [110, 70]; // Aumentei a largura do email
 
+                  // Remover nome do array de dados
                   const voterData = voters.map((voter) => [
-                    voter.name,
                     voter.email,
                     voter.timestamp,
                   ]);
@@ -835,14 +879,13 @@ const VotingDetailsTable = ({
             // Se você quiser incluir quem aplicou o voto de minerva
             if (
               voting.minervaVotedBy &&
-              expandedMeeting.participants?.[voting.minervaVotedBy]
+              meeting.participants?.[voting.minervaVotedBy]
             ) {
               pdf.setFontSize(10);
               pdf.setFont("helvetica", "italic");
               pdf.text(
                 `Voto de minerva dado por: ${
-                  expandedMeeting.participants[voting.minervaVotedBy].name ||
-                  "Usuário"
+                  meeting.participants[voting.minervaVotedBy].name || "Usuário"
                 }`,
                 14,
                 y
