@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
+// import { getAnalytics } from "firebase/analytics"; // Removido pois não está sendo usado
 import {
   getAuth,
   GoogleAuthProvider,
@@ -14,9 +14,6 @@ import {
   get,
   update,
   onValue,
-  query,
-  orderByChild,
-  equalTo,
   remove,
 } from "firebase/database";
 
@@ -45,11 +42,11 @@ if (
 let app;
 let auth;
 let database;
-let analytics;
+// analytics removido pois não está sendo usado
 
 try {
   app = initializeApp(firebaseConfig);
-  analytics = getAnalytics(app);
+  // analytics = getAnalytics(app); // Removido pois não está sendo usado
   database = getDatabase(app);
   auth = getAuth(app);
 
@@ -71,7 +68,7 @@ try {
   app = null;
   auth = null;
   database = null;
-  analytics = null;
+  // analytics = null; // Removido pois não está sendo usado
 }
 
 // Verificar domínio autorizado
@@ -539,8 +536,8 @@ const registerVoteInMeeting = async (meetingId, votingId, option, userId) => {
     const votingData = votingSnapshot.val();
 
     // Verificar se a votação está ativa
-    if (!votingData.active) {
-      throw new Error("Esta votação já foi encerrada");
+    if (!votingData.active || (votingData.endTime && votingData.endTime < Date.now())) {
+      throw new Error("Esta votação foi encerrada");
     }
 
     // Verificar se o usuário já votou
@@ -571,7 +568,6 @@ const registerVoteInMeeting = async (meetingId, votingId, option, userId) => {
       console.log(`Criando nova opção de voto: ${normalizedOption}`);
       originalOption = normalizedOption;
 
-      // Verificar se é possível adicionar a opção (apenas se for opção personalizada)
       const optionsRef = ref(
         database,
         `meetings/${meetingId}/votings/${votingId}/options`
@@ -593,8 +589,8 @@ const registerVoteInMeeting = async (meetingId, votingId, option, userId) => {
     const updates = {};
     updates[`options/${originalOption}`] = currentVotes + 1;
     updates[`voters/${userId}`] = true;
-    updates[`votes/${userId}`] = originalOption; // Registrar a opção escolhida
-    updates[`voteTimestamps/${userId}`] = Date.now(); // Registrar timestamp para ordenação
+    updates[`votes/${userId}`] = originalOption;
+    updates[`voteTimestamps/${userId}`] = Date.now();
 
     await update(
       ref(database, `meetings/${meetingId}/votings/${votingId}`),
@@ -746,7 +742,7 @@ const checkMeetingsEndTime = async () => {
         if (!meeting.active) continue;
 
         // Verificar se a reunião tem tempo de término definido
-        if (meeting.hasEndTime) {
+        if (meeting.hasEndTime && meeting.endDate && meeting.endTime) {
           const endDateTime = new Date(`${meeting.endDate}T${meeting.endTime}`);
 
           // Se o tempo definido já passou, encerrar a reunião
@@ -754,14 +750,11 @@ const checkMeetingsEndTime = async () => {
             console.log(
               `Encerrando automaticamente a reunião ${meeting.name} por tempo limite`
             );
-            await set(ref(database, `meetings/${id}/active`), false);
-
-            // Adiciona informação de quando foi encerrada
-            await set(
-              ref(database, `meetings/${id}/endedAt`),
-              now.toISOString()
-            );
-            await set(ref(database, `meetings/${id}/endReason`), "timeout");
+            await update(ref(database, `meetings/${id}`), {
+              active: false,
+              endedAt: now.toISOString(),
+              endReason: "timeout",
+            });
           }
         }
       }

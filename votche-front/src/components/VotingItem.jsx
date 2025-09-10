@@ -1,5 +1,5 @@
 // Componente de votação aprimorado
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   FaVoteYea,
@@ -16,12 +16,38 @@ function VotingItem({
   title,
   isActive,
   isAnonymous = false,
+  endTime,
   onEndVoting,
   totalVotes = 0,
   onVote,
   isOwner = false,
-  options = [], // Adicionar esta prop
+  options = [],
 }) {
+  // Timer de contagem regressiva
+  const [timeLeft, setTimeLeft] = useState(null);
+
+  useEffect(() => {
+    if (!isActive || !endTime) {
+      setTimeLeft(null);
+      return;
+    }
+    const updateTimer = () => {
+      const now = Date.now();
+      const diff = Math.max(0, Math.floor((endTime - now) / 1000));
+      setTimeLeft(diff);
+    };
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+    return () => clearInterval(interval);
+  }, [isActive, endTime]);
+
+  // Função para formatar segundos em mm:ss
+  const formatTime = (seconds) => {
+    const m = Math.floor(seconds / 60).toString().padStart(2, "0");
+    const s = (seconds % 60).toString().padStart(2, "0");
+    return `${m}:${s}`;
+  };
+
   const navigate = useNavigate();
   const [tempSelectedOption, setTempSelectedOption] = useState(null);
   const [selectedOption, setSelectedOption] = useState(null);
@@ -37,7 +63,6 @@ function VotingItem({
     if (!voted && tempSelectedOption) {
       setSelectedOption(tempSelectedOption);
       setVoted(true);
-      // Chamar a função para registrar o voto
       if (onVote) onVote(tempSelectedOption);
     }
   };
@@ -58,19 +83,28 @@ function VotingItem({
           )}
         </div>
         <span className={`voting-status ${isActive ? "active" : ""}`}>
-          {isActive ? "Ativa" : "Encerrada"}
+          {isActive ? (
+            timeLeft !== null ? (
+              <>
+                Ativa —{" "}
+                <span className="voting-timer">{formatTime(timeLeft)}</span>
+              </>
+            ) : (
+              "Ativa"
+            )
+          ) : (
+            "Encerrada"
+          )}
         </span>
       </div>
 
       <div className="voting-body">
         <div className="voting-options">
-          {/* Renderizar as opções dinamicamente */}
           {options.map((option) => (
             <button
               key={option}
-              className={`vote-option-btn ${
-                tempSelectedOption === option ? "temp-selected" : ""
-              } ${selectedOption === option ? "selected" : ""}`}
+              className={`vote-option-btn ${tempSelectedOption === option ? "temp-selected" : ""
+                } ${selectedOption === option ? "selected" : ""}`}
               onClick={() => handleSelectOption(option)}
               disabled={voted}
             >
@@ -120,21 +154,22 @@ function VotingsList() {
       <VotingItem
         title="votando"
         isActive={true}
+        endTime={Date.now() + 60000} // 1 minuto
         onEndVoting={() => console.log("Encerrar votação")}
         onViewDetails={() => console.log("Ver detalhes")}
-        options={["Concordo", "Discordo", "Me abstenho"]} // Passar as opções aqui
+        options={["Concordo", "Discordo", "Me abstenho"]}
       />
 
       <VotingItem
         title="o ema é lindo"
         isActive={true}
+        endTime={Date.now() + 120000} // 2 minutos
         onEndVoting={() => console.log("Encerrar votação")}
         onViewDetails={() => console.log("Ver detalhes")}
-        options={["Sim", "Não", "Talvez"]} // Exemplo de outras opções
+        options={["Sim", "Não", "Talvez"]}
       />
     </div>
   );
 }
 
-// Exportar o componente para uso em outros arquivos
 export default VotingItem;

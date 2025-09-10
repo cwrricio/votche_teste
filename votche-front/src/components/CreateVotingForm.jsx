@@ -5,6 +5,7 @@ import "../styles/CreateVoting.css";
 const CreateVotingForm = ({ onSubmit, onCancel }) => {
   const [title, setTitle] = useState("");
   const [options, setOptions] = useState(["", ""]);
+  const [duration, setDuration] = useState(5); // duração em minutos
 
   const handleAddOption = () => {
     setOptions([...options, ""]);
@@ -25,15 +26,22 @@ const CreateVotingForm = ({ onSubmit, onCancel }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    // Validar formulário
+    // Validar título
     if (!title.trim()) {
       alert("Por favor, informe um título para a votação");
       return;
     }
 
+    // Validar opções
     const filteredOptions = options.filter((opt) => opt.trim());
     if (filteredOptions.length < 2) {
       alert("Adicione pelo menos duas opções de votação");
+      return;
+    }
+
+    // Validar duração
+    if (isNaN(duration) || duration < 0.5) {
+      alert("Informe uma duração válida (mínimo 0.5 minuto)");
       return;
     }
 
@@ -43,10 +51,11 @@ const CreateVotingForm = ({ onSubmit, onCancel }) => {
       optionsObj[opt] = 0;
     });
 
-    // Enviar dados sem duração de votação
+    // Enviar dados com duração
     onSubmit({
       title,
       options: optionsObj,
+      duration: Number(duration),
       active: true,
       createdAt: new Date().toISOString(),
     });
@@ -63,6 +72,20 @@ const CreateVotingForm = ({ onSubmit, onCancel }) => {
       </div>
 
       <form onSubmit={handleSubmit} className="create-voting-form">
+        <div className="form-group">
+          <label htmlFor="voting-duration">Duração da Votação (minutos)</label>
+          <input
+            type="number"
+            id="voting-duration"
+            min="0.5"
+            step="0.5"
+            value={duration}
+            onChange={(e) => setDuration(e.target.value)}
+            className="form-input"
+            required
+          />
+        </div>
+
         <div className="form-group">
           <label htmlFor="voting-title">Título da Votação</label>
           <input

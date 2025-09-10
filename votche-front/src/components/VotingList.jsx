@@ -66,11 +66,12 @@ const VotingList = ({
                 title={voting.title}
                 isActive={isActive}
                 isAnonymous={voting.anonymous}
+                endTime={voting.endTime}
                 onEndVoting={onEndVoting}
                 totalVotes={totalVotes}
                 onVote={(option) => handleVote(voting.id, option)}
                 isOwner={isOwner}
-                options={votingOptions} // Passar as opções
+                options={votingOptions}
               />
             );
           })}

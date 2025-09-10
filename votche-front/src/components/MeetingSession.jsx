@@ -147,7 +147,7 @@ function MeetingSession({ user, onBack }) {
         meetingId,
         formData.title.trim(),
         Object.keys(formData.options),
-        15, // Duração padrão em minutos (pode ser ajustada conforme necessidade)
+        Number(formData.duration), // Usar a duração escolhida pelo usuário
         user.uid
       );
 
