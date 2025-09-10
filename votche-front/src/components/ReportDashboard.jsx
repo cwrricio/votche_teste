@@ -277,24 +277,20 @@ const ReportDashboard = ({ user }) => {
   };
 
   const calculateVotingStats = (voting) => {
-<<<<<<< HEAD
-    if (!voting)
-      return {
-        options: [],
-        total: 0,
-        winner: null,
-        maxVotes: 0,
-        isTie: false,
-        winners: [],
-      };
-=======
     // Log temporário para debug do formato de options
     if (voting && voting.anonymous === true) {
       // eslint-disable-next-line no-console
       console.log('DEBUG voting.options:', voting.options);
     }
-    if (!voting) return { options: [], total: 0, winner: null, maxVotes: 0, isAnonymous: false };
->>>>>>> e6336a927e1390e999a3ec70a355a918eff4c71a
+    if (!voting) return { 
+      options: [], 
+      total: 0, 
+      winner: null, 
+      maxVotes: 0, 
+      isAnonymous: false,
+      isTie: false,
+      winners: []
+    };
 
     const isAnonymous = voting.anonymous === true;
 
@@ -304,22 +300,6 @@ const ReportDashboard = ({ user }) => {
     let maxVotes = 0;
     let winners = [];
 
-<<<<<<< HEAD
-    if (voting.options && typeof voting.options === "object") {
-      Object.entries(voting.options).forEach(([option, votes]) => {
-        const voteCount = votes || 0;
-        totalVotes += voteCount;
-        options.push({ label: option, votes: voteCount });
-
-        if (voteCount > maxVotes) {
-          maxVotes = voteCount;
-          winner = option;
-          winners = [option];
-        } else if (voteCount === maxVotes && voteCount > 0) {
-          winners.push(option);
-        }
-      });
-=======
     if (isAnonymous) {
       // Votação anônima: pode ser objeto {opcao: {count, text}} ou array [{label, count}]
       if (Array.isArray(voting.options)) {
@@ -331,6 +311,9 @@ const ReportDashboard = ({ user }) => {
           if (voteCount > maxVotes) {
             maxVotes = voteCount;
             winner = label;
+            winners = [label];
+          } else if (voteCount === maxVotes && voteCount > 0) {
+            winners.push(label);
           }
         });
       } else if (voting.options && typeof voting.options === "object") {
@@ -343,6 +326,9 @@ const ReportDashboard = ({ user }) => {
           if (voteCount > maxVotes) {
             maxVotes = voteCount;
             winner = label;
+            winners = [label];
+          } else if (voteCount === maxVotes && voteCount > 0) {
+            winners.push(label);
           }
         });
       }
@@ -377,10 +363,12 @@ const ReportDashboard = ({ user }) => {
           if (voteCount > maxVotes) {
             maxVotes = voteCount;
             winner = option;
+            winners = [option];
+          } else if (voteCount === maxVotes && voteCount > 0) {
+            winners.push(option);
           }
         });
       }
->>>>>>> e6336a927e1390e999a3ec70a355a918eff4c71a
     }
 
     const isTie = winners.length > 1;
@@ -1171,7 +1159,6 @@ const ReportDashboard = ({ user }) => {
                   expandedMeeting && expandedMeeting.id === meeting.id;
                 const votings = meetingVotings[meeting.id] || [];
 
-<<<<<<< HEAD
                 return (
                   <div
                     key={meeting.id}
@@ -1245,23 +1232,6 @@ const ReportDashboard = ({ user }) => {
                                   downloadPDF(meeting);
                                 }}
                                 disabled={generatingPDF}
-=======
-                    return (
-                      <div
-                        key={meeting.id}
-                        className={`meeting-report-card ${isExpanded ? "expanded" : ""
-                          }`}
-                      >
-                        <div
-                          className="meeting-card-header"
-                          onClick={() => toggleMeetingExpansion(meeting)}
-                        >
-                          <div className="meeting-card-info">
-                            <h3>{meeting.name}</h3>
-                            <div className="meeting-meta-info">
-                              <span
-                                className={`meeting-status ${status.class}`}
->>>>>>> e6336a927e1390e999a3ec70a355a918eff4c71a
                               >
                                 {generatingPDF ? "Gerando..." : "Baixar PDF"}
                               </button>
@@ -1281,7 +1251,6 @@ const ReportDashboard = ({ user }) => {
                               const stats = calculateVotingStats(voting);
                               const isHighlighted = voting.id === focusVotingId;
 
-<<<<<<< HEAD
                               return (
                                 <div
                                   key={voting.id}
@@ -1305,117 +1274,6 @@ const ReportDashboard = ({ user }) => {
                                       <span className="voting-votes">
                                         {stats.total} voto(s)
                                       </span>
-=======
-                            {/* Lista de votações melhorada */}
-                            <div className="votings-list">
-                              {votings.length === 0 ? (
-                                <div className="no-votings-message">
-                                  <p>
-                                    Nenhuma votação encontrada para esta reunião
-                                  </p>
-                                </div>
-                              ) : (
-                                votings.map((voting) => {
-                                  const stats = calculateVotingStats(voting);
-                                  const isHighlighted =
-                                    voting.id === focusVotingId;
-
-                                  return (
-                                    <div
-                                      key={voting.id}
-                                      id={`voting-${voting.id}`}
-                                      className={`voting-report-item ${isHighlighted ? "highlight-voting" : ""
-                                        }`}
-                                    >
-                                      <div className="voting-header">
-                                        <h4>
-                                          {voting.title || "Votação sem título"}
-                                        </h4>
-                                        <div className="voting-meta">
-                                          <span
-                                            className={`voting-status ${voting.active ? "active" : "ended"
-                                              }`}
-                                          >
-                                            {voting.active
-                                              ? "Ativa"
-                                              : "Encerrada"}
-                                          </span>
-                                          <span className="voting-votes">
-                                            {stats.total} voto(s)
-                                          </span>
-                                        </div>
-                                      </div>
-
-                                      <div className="voting-results">
-                                        {/* Gráfico usando a função renderChart */}
-                                        <div className="voting-chart">
-                                          {renderChart(stats, chartType)}
-                                        </div>
-
-                                        {/* Tabela de resultados melhorada */}
-                                        <div className="voting-options-table">
-                                          <table>
-                                            <thead>
-                                              <tr>
-                                                <th>Opção</th>
-                                                <th>Votos</th>
-                                                <th>%</th>
-                                              </tr>
-                                            </thead>
-                                            <tbody>
-                                              {stats.options.map(
-                                                (option, idx) => {
-                                                  const percentage =
-                                                    stats.total > 0
-                                                      ? Math.round(
-                                                        (option.votes /
-                                                          stats.total) *
-                                                        100
-                                                      )
-                                                      : 0;
-
-                                                  return (
-                                                    <tr
-                                                      key={idx}
-                                                      className={
-                                                        option.label ===
-                                                          stats.winner
-                                                          ? "winner"
-                                                          : ""
-                                                      }
-                                                    >
-                                                      <td>{option.label}</td>
-                                                      <td>{option.votes}</td>
-                                                      <td>{percentage}%</td>
-                                                    </tr>
-                                                  );
-                                                }
-                                              )}
-                                            </tbody>
-                                            {stats.total > 0 && (
-                                              <tfoot>
-                                                <tr>
-                                                  <td>Total</td>
-                                                  <td>{stats.total}</td>
-                                                  <td>100%</td>
-                                                </tr>
-                                              </tfoot>
-                                            )}
-                                          </table>
-                                        </div>
-
-                                        {/* Resto dos elementos do relatório */}
-                                        <div className="voting-report-container">
-                                          {/* Usar o componente VotingDetailsTable sem título adicional */}
-                                          <VotingDetailsTable
-                                            voting={voting}
-                                            participants={
-                                              meeting?.participants || {}
-                                            }
-                                          />
-                                        </div>
-                                      </div>
->>>>>>> e6336a927e1390e999a3ec70a355a918eff4c71a
                                     </div>
                                   </div>
 

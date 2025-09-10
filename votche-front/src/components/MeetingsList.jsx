@@ -208,18 +208,11 @@ function MeetingsList({
             tabIndex={0}
           >
             Minhas Reuniões
-<<<<<<< HEAD
           </div>
           <div
             className={`tab-item ${
               activeTab === "participating" ? "active" : ""
             }`}
-=======
-          </button>
-          <button
-            className={`tab-btn ${activeTab === "participating" ? "active" : ""
-              }`}
->>>>>>> e6336a927e1390e999a3ec70a355a918eff4c71a
             onClick={() => setActiveTab("participating")}
             role="button"
             aria-selected={activeTab === "participating"}
@@ -240,10 +233,6 @@ function MeetingsList({
           {user && activeTab === "created" && meetings.created.length === 0 && (
             <div className="empty-state">
               <p>Você ainda não criou nenhuma reunião</p>
-<<<<<<< HEAD
-=======
-
->>>>>>> e6336a927e1390e999a3ec70a355a918eff4c71a
             </div>
           )}
 
@@ -382,13 +371,6 @@ function MeetingsList({
 
                 return (
                   <div
-<<<<<<< HEAD
-                    className={`meeting-card ${
-                      !meeting.active ? "meeting-ended" : ""
-                    }`}
-                    key={meeting.id}
-                    onClick={() => handleSelectMeeting(meeting)}
-=======
                     key={meeting.id}
                     className={`meeting-card ${!meeting.active
                       ? "inactive"
@@ -397,7 +379,6 @@ function MeetingsList({
                         : ""
                       }`}
                     onClick={() => onSelectMeeting(meeting)}
->>>>>>> e6336a927e1390e999a3ec70a355a918eff4c71a
                   >
                     <div className="meeting-card-content">
                       <h3 className="meeting-name">
