@@ -45,8 +45,13 @@ function CreateVoting({ user, onComplete }) {
       return;
     }
 
+<<<<<<< HEAD
     if (duration < 1) {
       setError("A duração mínima é de 1 minuto");
+=======
+    if (isNaN(duration) || duration < 1) {
+      setError('A duração mínima é de 1 minuto');
+>>>>>>> e6336a927e1390e999a3ec70a355a918eff4c71a
       return;
     }
 
@@ -66,7 +71,80 @@ function CreateVoting({ user, onComplete }) {
     }
   };
 
+<<<<<<< HEAD
 
+=======
+  return (
+    <div className="voting-form-container">
+      <h2>Criar Nova Votação</h2>
+
+      {error && <div className="error-message">{error}</div>}
+
+      <form onSubmit={handleSubmit}>
+        <div className="form-group">
+          <label htmlFor="title">Pergunta da Votação</label>
+          <input
+            type="text"
+            id="title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Ex: Qual o melhor dia para a reunião?"
+            required
+          />
+        </div>
+
+        <div className="form-group">
+          <label>Opções de Resposta</label>
+          {options.map((option, index) => (
+            <div key={index} className="option-input">
+              <input
+                type="text"
+                value={option}
+                onChange={(e) => handleOptionChange(index, e.target.value)}
+                placeholder={`Opção ${index + 1}`}
+                required
+              />
+              <button
+                type="button"
+                className="remove-option"
+                onClick={() => handleRemoveOption(index)}
+              >
+                ×
+              </button>
+            </div>
+          ))}
+          <button
+            type="button"
+            className="add-option-btn"
+            onClick={handleAddOption}
+          >
+            + Adicionar Opção
+          </button>
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="duration">Duração (minutos)</label>
+          <input
+            type="number"
+            id="duration"
+            value={duration}
+            onChange={(e) => setDuration(parseInt(e.target.value) || 0)}
+            min="1"
+            required
+          />
+        </div>
+
+        <button
+          type="submit"
+          className="submit-btn"
+          disabled={isCreating}
+        >
+          {isCreating ? 'Criando...' : 'Criar Votação'}
+        </button>
+      </form>
+    </div>
+  );
+>>>>>>> e6336a927e1390e999a3ec70a355a918eff4c71a
 }
 
 export default CreateVoting;

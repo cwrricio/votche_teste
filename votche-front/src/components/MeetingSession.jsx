@@ -65,7 +65,7 @@ function MeetingSession({ user, onBack }) {
 
     // Escutar atualizações das votações
     const unsubscribeVotings = listenToVotingsInMeeting(meetingId, (data) => {
-      console.log("Votações recebidas:", data);
+      console.log("[MeetingSession] Votações recebidas do Firebase:", data);
       setVotings(data);
     });
 
@@ -93,7 +93,12 @@ function MeetingSession({ user, onBack }) {
   // Função para registrar um voto
   const handleVote = async (votingId, option) => {
     try {
-      await registerVoteInMeeting(meetingId, votingId, option, user.uid);
+      // Buscar o tipo da votação
+      const voting = votings.find((v) => v.id === votingId);
+      const isMulti = voting && voting.votingType === "multi";
+      // Se multi, garantir array
+      const toSend = isMulti ? option : option;
+      await registerVoteInMeeting(meetingId, votingId, toSend, user.uid);
     } catch (error) {
       setError(error.message || "Erro ao registrar voto");
     }
@@ -140,12 +145,14 @@ function MeetingSession({ user, onBack }) {
 
     try {
       setIsCreatingVoting(true);
+      // Passar o objeto de opções completo para o backend
       await createVotingInMeeting(
         meetingId,
         formData.title.trim(),
-        Object.keys(formData.options),
-        15, // Duração padrão em minutos (pode ser ajustada conforme necessidade)
-        user.uid
+        formData.options, // Agora envia o objeto completo { chave: textoOriginal }
+        Number(formData.duration),
+        user.uid,
+        formData.votingType || "single"
       );
 
       // Resetar formulário
@@ -259,7 +266,7 @@ function MeetingSession({ user, onBack }) {
             <div className="password-info-column">
               <p className="password-label">Senha da reunião:</p>
               <div className="password-display-row">
-                <strong className="meeting-password">{meeting.password}</strong>
+                <strong className="meeting-password">{meeting.password?.toUpperCase()}</strong>
                 <button
                   className={`copy-button ${copied ? "copied" : ""}`}
                   onClick={handleCopyCode}

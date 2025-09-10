@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
+// import { getAnalytics } from "firebase/analytics"; // Removido pois não está sendo usado
 import {
   getAuth,
   GoogleAuthProvider,
@@ -14,9 +14,6 @@ import {
   get,
   update,
   onValue,
-  query,
-  orderByChild,
-  equalTo,
   remove,
 } from "firebase/database";
 
@@ -45,11 +42,11 @@ if (
 let app;
 let auth;
 let database;
-let analytics;
+// analytics removido pois não está sendo usado
 
 try {
   app = initializeApp(firebaseConfig);
-  analytics = getAnalytics(app);
+  // analytics = getAnalytics(app); // Removido pois não está sendo usado
   database = getDatabase(app);
   auth = getAuth(app);
 
@@ -71,7 +68,7 @@ try {
   app = null;
   auth = null;
   database = null;
-  analytics = null;
+  // analytics = null; // Removido pois não está sendo usado
 }
 
 // Verificar domínio autorizado
@@ -516,7 +513,8 @@ const createVotingInMeeting = async (
   title,
   options,
   durationMinutes,
-  createdBy
+  createdBy,
+  votingType = "single"
 ) => {
   try {
     // Verificar se a reunião existe e está ativa
@@ -541,15 +539,17 @@ const createVotingInMeeting = async (
     // Calcular tempo de término da votação
     const endTime = Date.now() + durationMinutes * 60 * 1000;
 
-    // Criar objeto de opções com contagem zero, normalizando todas as opções
+    // Montar objeto de opções: { chave: { text: textoOriginal, count: 0 } }
     const optionsObj = {};
-    options.forEach((option) => {
-      // Normalizar opção: primeira letra maiúscula, resto minúsculo
-      const normalizedOption =
-        option.trim().charAt(0).toUpperCase() +
-        option.trim().slice(1).toLowerCase();
-      optionsObj[normalizedOption] = 0;
+    Object.entries(options).forEach(([key, text]) => {
+      optionsObj[key] = { text, count: 0 };
     });
+
+    // Buscar se a reunião é anônima
+    let anonymous = false;
+    if (typeof meetingData.isAnonymous !== 'undefined') {
+      anonymous = meetingData.isAnonymous === true;
+    }
 
     // Referência para nova votação
     const votingRef = push(ref(database, `meetings/${meetingId}/votings`));
@@ -563,6 +563,8 @@ const createVotingInMeeting = async (
       createdAt: Date.now(),
       endTime,
       active: true,
+      votingType,
+      anonymous,
     });
 
     return {
@@ -578,11 +580,6 @@ const createVotingInMeeting = async (
 // Função para registrar voto em uma votação de uma reunião
 const registerVoteInMeeting = async (meetingId, votingId, option, userId) => {
   try {
-    // Normalizar a opção para garantir consistência
-    const normalizedOption =
-      option.trim().charAt(0).toUpperCase() +
-      option.trim().slice(1).toLowerCase();
-
     // Verificar se a votação existe
     const votingRef = ref(
       database,
@@ -597,62 +594,90 @@ const registerVoteInMeeting = async (meetingId, votingId, option, userId) => {
     const votingData = votingSnapshot.val();
 
     // Verificar se a votação está ativa
-    if (!votingData.active) {
-      throw new Error("Esta votação já foi encerrada");
+    if (!votingData.active || (votingData.endTime && votingData.endTime < Date.now())) {
+      throw new Error("Esta votação foi encerrada");
     }
 
-    // Verificar se o usuário já votou
-    if (votingData.voters && votingData.voters[userId]) {
+    // Buscar se a votação é anônima
+    // Preferir o campo da votação, se não existir, cair para o da reunião (retrocompatibilidade)
+    let isAnonymous = false;
+    if (typeof votingData.anonymous !== 'undefined') {
+      isAnonymous = votingData.anonymous === true;
+    } else {
+      const meetingRef = ref(database, `meetings/${meetingId}`);
+      const meetingSnapshot = await get(meetingRef);
+      const meetingData = meetingSnapshot.exists() ? meetingSnapshot.val() : {};
+      isAnonymous = meetingData.isAnonymous === true;
+    }
+
+    // Se não for anônima, impedir voto duplo
+    if (!isAnonymous && votingData.voters && votingData.voters[userId]) {
       throw new Error("Você já votou nesta votação");
     }
 
-    // Verificar se a opção normalizada existe nas opções disponíveis
-    let originalOption = normalizedOption;
-    let optionExists = false;
+    // Suporte a múltipla escolha
+    const isMulti = votingData.votingType === "multi";
+    const selectedOptions = isMulti && Array.isArray(option) ? option : [option];
 
-    if (votingData.options) {
-      // Comparar com opções normalizadas
-      for (const opt of Object.keys(votingData.options)) {
-        const normalizedOpt =
-          opt.trim().charAt(0).toUpperCase() +
-          opt.trim().slice(1).toLowerCase();
-        if (normalizedOpt === normalizedOption) {
-          originalOption = opt; // Usar a opção original do banco
-          optionExists = true;
-          break;
+    // Normalizar e validar opções
+    const normalizedOptions = selectedOptions.map(opt =>
+      opt.trim().charAt(0).toUpperCase() + opt.trim().slice(1).toLowerCase()
+    );
+
+    // Atualizar contagem de votos para cada opção
+    const updates = {};
+    for (const normalizedOption of normalizedOptions) {
+      // Verificar se a opção existe
+      let originalOption = normalizedOption;
+      let optionExists = false;
+      if (votingData.options) {
+        for (const opt of Object.keys(votingData.options)) {
+          const normalizedOpt =
+            opt.trim().charAt(0).toUpperCase() +
+            opt.trim().slice(1).toLowerCase();
+          if (normalizedOpt === normalizedOption) {
+            originalOption = opt;
+            optionExists = true;
+            break;
+          }
         }
       }
-    }
-
-    if (!optionExists) {
-      // Se a opção não existir, vamos criá-la
-      console.log(`Criando nova opção de voto: ${normalizedOption}`);
-      originalOption = normalizedOption;
-
-      // Verificar se é possível adicionar a opção (apenas se for opção personalizada)
-      const optionsRef = ref(
+      if (!optionExists) {
+        // Se a opção não existir, criar com texto igual à chave
+        const optionsRef = ref(
+          database,
+          `meetings/${meetingId}/votings/${votingId}/options`
+        );
+        await update(optionsRef, {
+          [normalizedOption]: { text: normalizedOption, count: 0 },
+        });
+      }
+      // Incrementar contagem
+      const optionRef = ref(
         database,
-        `meetings/${meetingId}/votings/${votingId}/options`
+        `meetings/${meetingId}/votings/${votingId}/options/${originalOption}`
       );
-      await update(optionsRef, {
-        [normalizedOption]: 0,
-      });
+      const optionSnapshot = await get(optionRef);
+      let currentVotes = 0;
+      let text = originalOption;
+      if (optionSnapshot.exists()) {
+        const val = optionSnapshot.val();
+        if (typeof val === 'object' && val.count !== undefined) {
+          currentVotes = val.count;
+          text = val.text || originalOption;
+        } else if (typeof val === 'number') {
+          currentVotes = val;
+        }
+      }
+      updates[`options/${originalOption}`] = { text, count: currentVotes + 1 };
     }
 
-    // Incrementar contagem da opção
-    const optionRef = ref(
-      database,
-      `meetings/${meetingId}/votings/${votingId}/options/${originalOption}`
-    );
-    const optionSnapshot = await get(optionRef);
-    const currentVotes = optionSnapshot.exists() ? optionSnapshot.val() : 0;
-
-    // Registrar voto e timestamp
-    const updates = {};
-    updates[`options/${originalOption}`] = currentVotes + 1;
-    updates[`voters/${userId}`] = true;
-    updates[`votes/${userId}`] = originalOption; // Registrar a opção escolhida
-    updates[`voteTimestamps/${userId}`] = Date.now(); // Registrar timestamp para ordenação
+    // Se NÃO for anônima, registrar voto e timestamp do usuário
+    if (!isAnonymous) {
+      updates[`voters/${userId}`] = true;
+      updates[`votes/${userId}`] = isMulti ? normalizedOptions : normalizedOptions[0];
+      updates[`voteTimestamps/${userId}`] = Date.now();
+    }
 
     await update(
       ref(database, `meetings/${meetingId}/votings/${votingId}`),
@@ -940,7 +965,7 @@ const checkMeetingsEndTime = async () => {
         if (!meeting.active) continue;
 
         // Verificar se a reunião tem tempo de término definido
-        if (meeting.hasEndTime) {
+        if (meeting.hasEndTime && meeting.endDate && meeting.endTime) {
           const endDateTime = new Date(`${meeting.endDate}T${meeting.endTime}`);
 
           // Se o tempo definido já passou, encerrar a reunião
@@ -948,14 +973,11 @@ const checkMeetingsEndTime = async () => {
             console.log(
               `Encerrando automaticamente a reunião ${meeting.name} por tempo limite`
             );
-            await set(ref(database, `meetings/${id}/active`), false);
-
-            // Adiciona informação de quando foi encerrada
-            await set(
-              ref(database, `meetings/${id}/endedAt`),
-              now.toISOString()
-            );
-            await set(ref(database, `meetings/${id}/endReason`), "timeout");
+            await update(ref(database, `meetings/${id}`), {
+              active: false,
+              endedAt: now.toISOString(),
+              endReason: "timeout",
+            });
           }
         }
       }

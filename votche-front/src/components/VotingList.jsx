@@ -53,10 +53,14 @@ const VotingList = ({
         <div className="voting-list">
           {votings.map((voting) => {
             const isActive = voting.active;
-            const totalVotes = getTotalVotes(voting.options);
-            const votingOptions = voting.options
-              ? Object.keys(voting.options)
-              : [];
+            const totalVotes = getTotalVotes(
+              voting.options
+                ? Object.fromEntries(
+                  Object.entries(voting.options).map(([k, v]) => [k, v.count ?? 0])
+                )
+                : {}
+            );
+            const votingType = voting.votingType || "single";
 
             return (
               <VotingItem
@@ -66,11 +70,13 @@ const VotingList = ({
                 title={voting.title}
                 isActive={isActive}
                 isAnonymous={voting.anonymous}
+                endTime={voting.endTime}
                 onEndVoting={onEndVoting}
                 totalVotes={totalVotes}
                 onVote={(option) => handleVote(voting.id, option)}
                 isOwner={isOwner}
-                options={votingOptions} // Passar as opções
+                options={voting.options || {}}
+                votingType={votingType}
               />
             );
           })}

@@ -5,6 +5,8 @@ import "../styles/CreateVoting.css";
 const CreateVotingForm = ({ onSubmit, onCancel }) => {
   const [title, setTitle] = useState("");
   const [options, setOptions] = useState(["", ""]);
+  const [duration, setDuration] = useState(5); // duração em minutos
+  const [votingType, setVotingType] = useState("single"); // single = única, multi = múltipla
 
   const handleAddOption = () => {
     setOptions([...options, ""]);
@@ -25,28 +27,44 @@ const CreateVotingForm = ({ onSubmit, onCancel }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    // Validar formulário
+    // Validar título
     if (!title.trim()) {
       alert("Por favor, informe um título para a votação");
       return;
     }
 
+    // Validar opções
     const filteredOptions = options.filter((opt) => opt.trim());
     if (filteredOptions.length < 2) {
       alert("Adicione pelo menos duas opções de votação");
       return;
     }
 
-    // Transformar array em objeto de opções
+    // Validar duração
+    if (isNaN(duration) || duration < 0.5) {
+      alert("Informe uma duração válida (mínimo 0.5 minuto)");
+      return;
+    }
+
+    // Salvar as opções como objeto { chaveSanitizada: textoOriginal }
+    // Sanitiza apenas para a chave, mas mantém o texto original para exibição
+    // Firebase proíbe: . # $ / [ ]
+    const sanitizeKey = (str) =>
+      str.replace(/[.#$/\[\]]/g, "_").trim(); // Remover escapes desnecessários
     const optionsObj = {};
     filteredOptions.forEach((opt) => {
-      optionsObj[opt] = 0;
+      const key = sanitizeKey(opt);
+      if (key.length > 0) {
+        optionsObj[key] = opt; // salva o texto original como valor
+      }
     });
 
-    // Enviar dados sem duração de votação
+    // Enviar dados com duração e tipo
     onSubmit({
       title,
       options: optionsObj,
+      duration: Number(duration),
+      votingType,
       active: true,
       createdAt: new Date().toISOString(),
     });
@@ -63,6 +81,45 @@ const CreateVotingForm = ({ onSubmit, onCancel }) => {
       </div>
 
       <form onSubmit={handleSubmit} className="create-voting-form">
+        <div className="form-group">
+          <label>Tipo de Votação</label>
+          <div style={{ display: "flex", gap: "1rem", marginBottom: 8 }}>
+            <label>
+              <input
+                type="radio"
+                name="votingType"
+                value="single"
+                checked={votingType === "single"}
+                onChange={() => setVotingType("single")}
+              />
+              Escolha única
+            </label>
+            <label>
+              <input
+                type="radio"
+                name="votingType"
+                value="multi"
+                checked={votingType === "multi"}
+                onChange={() => setVotingType("multi")}
+              />
+              Múltipla escolha
+            </label>
+          </div>
+        </div>
+        <div className="form-group">
+          <label htmlFor="voting-duration">Duração da Votação (minutos)</label>
+          <input
+            type="number"
+            id="voting-duration"
+            min="0.5"
+            step="0.5"
+            value={duration}
+            onChange={(e) => setDuration(e.target.value)}
+            className="form-input"
+            required
+          />
+        </div>
+
         <div className="form-group">
           <label htmlFor="voting-title">Título da Votação</label>
           <input

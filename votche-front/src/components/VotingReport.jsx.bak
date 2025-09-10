@@ -14,6 +14,7 @@ function VotingReport({ votingData }) {
       chartInstance.current.destroy();
     }
 
+    // Corrigir para ler o campo count das opções (compatível com votações anônimas)
     const options = votingData.options || {};
     if (Object.keys(options).length === 0) return;
 
@@ -29,12 +30,9 @@ function VotingReport({ votingData }) {
         "#9966FF", // Roxo
         "#FF9F40", // Laranja
       ];
-
-      // Se temos mais opções que cores base, gerar cores aleatórias adicionais
       if (count <= baseColors.length) {
         return baseColors.slice(0, count);
       }
-
       const colors = [...baseColors];
       for (let i = baseColors.length; i < count; i++) {
         const r = Math.floor(Math.random() * 255);
@@ -45,8 +43,13 @@ function VotingReport({ votingData }) {
       return colors;
     };
 
-    const labels = Object.keys(options);
-    const data = Object.values(options);
+    // labels: texto da opção, data: count
+    const labels = Object.keys(options).map(
+      (key) => (typeof options[key] === 'object' && options[key] !== null ? options[key].text || key : key)
+    );
+    const data = Object.keys(options).map(
+      (key) => (typeof options[key] === 'object' && options[key] !== null ? options[key].count || 0 : options[key] || 0)
+    );
     const colors = generateColors(labels.length);
 
     chartInstance.current = new Chart(ctx, {
@@ -92,10 +95,15 @@ function VotingReport({ votingData }) {
     };
   }, [votingData]);
 
-  // Função para calcular o total de votos
+  // Função para calcular o total de votos (usando count se for objeto)
   const calculateTotalVotes = (options) => {
     if (!options) return 0;
-    return Object.values(options).reduce((sum, votes) => sum + votes, 0);
+    return Object.values(options).reduce((sum, val) => {
+      if (typeof val === 'object' && val !== null) {
+        return sum + (val.count || 0);
+      }
+      return sum + (typeof val === 'number' ? val : 0);
+    }, 0);
   };
 
   // Função para encontrar a opção vencedora
@@ -177,18 +185,25 @@ function VotingReport({ votingData }) {
             </tr>
           </thead>
           <tbody>
-            {Object.entries(votingData.options || {}).map(([option, votes]) => (
-              <tr key={option}>
-                <td>{option}</td>
-                <td>{votes}</td>
-                <td>
-                  {totalVotes > 0
-                    ? Math.round((votes / totalVotes) * 100)
-                    : 0}
-                  %
-                </td>
-              </tr>
-            ))}
+            {Object.entries(votingData.options || {}).map(([option, val]) => {
+              let label = option;
+              let count = 0;
+              if (typeof val === 'object' && val !== null) {
+                label = val.text || option;
+                count = val.count || 0;
+              } else if (typeof val === 'number') {
+                count = val;
+              }
+              return (
+                <tr key={option}>
+                  <td>{label}</td>
+                  <td>{count}</td>
+                  <td>
+                    {totalVotes > 0 ? Math.round((count / totalVotes) * 100) : 0}%
+                  </td>
+                </tr>
+              );
+            })}
             <tr className="total-row">
               <td>Total</td>
               <td>{totalVotes}</td>
@@ -454,6 +469,9 @@ const VotingReport = ({
       return;
     }
 
+    // LOG: Mostrar o array de votações recebido
+    console.log("[VotingReport] votings recebidas:", votings);
+
     const processVotings = async () => {
       try {
         // Coletar todos os IDs de usuários que votaram
@@ -504,12 +522,22 @@ const VotingReport = ({
             !Array.isArray(voting.options)
           ) {
             Object.keys(voting.options).forEach((option) => {
+              // Se for objeto {text, count}, usar count
+              const optVal = voting.options[option];
+              let value = 0;
+              let label = option;
+              if (typeof optVal === 'object' && optVal !== null) {
+                value = optVal.count || 0;
+                label = optVal.text || option;
+              } else if (typeof optVal === 'number') {
+                value = optVal;
+              }
               options.push({
-                label: option,
-                value: voting.options[option] || 0,
+                label,
+                value,
               });
-              optionCounts[option] = voting.options[option] || 0;
-              votersByOption[option] = [];
+              optionCounts[label] = value;
+              votersByOption[label] = [];
             });
           }
 
@@ -558,10 +586,9 @@ const VotingReport = ({
 
           return {
             ...voting,
-            options,
             isAnonymous, // Adicionar flag para controlar exibição de detalhes dos votantes
             processedData: {
-              options,
+              options, // array para tabela e gráfico
               optionCounts,
               totalVotes,
               votersByOption,
@@ -571,7 +598,9 @@ const VotingReport = ({
           };
         });
 
-        setReportData(processedData);
+  // LOG: Mostrar o array de votações processado
+  console.log("[VotingReport] votings processadas:", processedData);
+  setReportData(processedData);
       } catch (err) {
         console.error("Erro ao processar dados do relatório:", err);
         setError("Falha ao carregar dados detalhados do relatório");
