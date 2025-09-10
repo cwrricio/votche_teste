@@ -616,11 +616,7 @@ const registerVoteInMeeting = async (
   userId
 ) => {
   try {
-<<<<<<< HEAD
-    // Verificar se a votação existe
-=======
     // Verificar se a votação existe e está ativa
->>>>>>> votacao-anonima
     const votingRef = ref(
       database,
       `meetings/${meetingId}/votings/${votingId}`
@@ -632,17 +628,16 @@ const registerVoteInMeeting = async (
     }
 
     const votingData = votingSnapshot.val();
-<<<<<<< HEAD
-    const isAnonymous = votingData.anonymous === true;
-=======
 
     if (!votingData.active) {
       throw new Error("Esta votação já foi encerrada");
     }
->>>>>>> votacao-anonima
 
     // Buscar informações do usuário atual
+    const auth = getAuth();
     const currentUser = auth.currentUser;
+
+    // Preparar os dados completos do usuário
     const userDisplayName = currentUser?.displayName || "";
     const userEmail = currentUser?.email || "";
     const userPhotoURL = currentUser?.photoURL || "";
@@ -691,19 +686,6 @@ const registerVoteInMeeting = async (
       `meetings/${meetingId}/votings/${votingId}/voteTimestamps/${userId}`
     ] = serverTimestamp();
 
-<<<<<<< HEAD
-    // Importante: Atualizar também o contador em options para votações anônimas
-    // Isso garantirá que a contagem seja correta mesmo sem exibir quem votou
-    if (isAnonymous) {
-      // Obter o contador atual
-      let currentCount = 0;
-      if (
-        votingData.options &&
-        votingData.options[selectedOption] &&
-        typeof votingData.options[selectedOption].count === "number"
-      ) {
-        currentCount = votingData.options[selectedOption].count;
-=======
     // IMPORTANTE: Atualizar os dados do participante se estiverem incompletos
     const participantRef = ref(
       database,
@@ -729,17 +711,8 @@ const registerVoteInMeeting = async (
       if (!participantSnapshot.exists()) {
         updates[`meetings/${meetingId}/participants/${userId}/joinedAt`] =
           new Date().toISOString();
->>>>>>> votacao-anonima
       }
-
-      // Atualizar o contador incrementando 1
-      updates[
-        `meetings/${meetingId}/votings/${votingId}/options/${selectedOption}/count`
-      ] = currentCount + 1;
     }
-
-    // Atualizar dados do participante (código existente)
-    // ...
 
     // Executar todas as atualizações em uma única operação
     await update(ref(database), updates);

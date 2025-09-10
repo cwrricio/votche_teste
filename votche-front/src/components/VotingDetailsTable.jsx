@@ -56,39 +56,6 @@ const VotingDetailsTable = ({
       });
     }
 
-<<<<<<< HEAD
-    // Se for votação anônima, retornar apenas a estrutura com as opções
-    // mas sem detalhar os votantes
-    if (voting.anonymous === true) {
-      // Processar contagens de votos anônimos se disponível
-      if (voting.options && typeof voting.options === "object") {
-        Object.entries(voting.options).forEach(([option, value]) => {
-          const count =
-            value && typeof value.count === "number" ? value.count : 0;
-          // Criar um placeholder para cada voto, sem identificação
-          for (let i = 0; i < count; i++) {
-            votesByOption[option].push({
-              id: `anonymous-${i}`,
-              name: "Voto anônimo",
-              email: "-",
-              timestamp: "-",
-              isAnonymous: true,
-            });
-          }
-        });
-      }
-      return votesByOption;
-    }
-
-    // Continuar com o processamento normal para votações não-anônimas
-    // LOG PARA DEPURAÇÃO - remova após resolver o problema
-    console.log("Dados de participantes disponíveis:", {
-      meetingParticipants: meeting?.participants || {},
-      componentParticipants: participants || {},
-    });
-
-=======
->>>>>>> votacao-anonima
     // Processar os votos existentes
     Object.entries(voting.votes || {}).forEach(([userId, option]) => {
       if (!votesByOption[option]) {
@@ -959,7 +926,7 @@ const VotingDetailsTable = ({
 
   // Função para calcular estatísticas de votação
   const calculateVotingStats = (voting) => {
-    if (!voting) {
+    if (!voting)
       return {
         options: [],
         total: 0,
@@ -967,43 +934,38 @@ const VotingDetailsTable = ({
         maxVotes: 0,
         isTie: false,
         winners: [],
-        isAnonymous: false,
       };
-    }
 
+    // Verificar se é uma votação anônima
     const isAnonymous = voting.anonymous === true;
 
+    // Extrair opções e votos
     const options = [];
     let totalVotes = 0;
     let winner = null;
     let maxVotes = 0;
-    let winners = [];
+    let winners = []; // Array para armazenar todas as opções com votos máximos (para detectar empate)
 
-    if (isAnonymous) {
-      // Votação anônima: processa os contadores nas propriedades options
-      if (voting.options && typeof voting.options === "object") {
-        Object.entries(voting.options).forEach(([option, value]) => {
-          const voteCount =
-            value && typeof value.count === "number" ? value.count : 0;
-          const label = value && value.text ? value.text : option;
+    // Processar opções da votação
+    if (voting.options && typeof voting.options === "object") {
+      Object.entries(voting.options).forEach(([option, votes]) => {
+        const voteCount = votes || 0;
+        totalVotes += voteCount;
+        options.push({ label: option, votes: voteCount });
 
-          totalVotes += voteCount;
-          options.push({ label, votes: voteCount });
-
-          if (voteCount > maxVotes) {
-            maxVotes = voteCount;
-            winner = label;
-            winners = [option];
-          } else if (voteCount === maxVotes && voteCount > 0) {
-            winners.push(option);
-          }
-        });
-      }
-    } else {
-      // Votação não anônima: conta os votos normalmente
-      // (código existente...)
+        // Verificar se é a opção mais votada
+        if (voteCount > maxVotes) {
+          maxVotes = voteCount;
+          winner = option;
+          winners = [option]; // Resetar lista de vencedores
+        } else if (voteCount === maxVotes && voteCount > 0) {
+          // Se for igual ao máximo atual, adicionar à lista de vencedores (possível empate)
+          winners.push(option);
+        }
+      });
     }
 
+    // Verificar se há empate (mais de uma opção com votos máximos)
     const isTie = winners.length > 1;
 
     return {
@@ -1127,7 +1089,6 @@ const VotingDetailsTable = ({
   const votesByOption = getVotesByOption();
   const isStandard = isStandardVoting();
 
-  // No return do componente, ajuste a exibição dos detalhes
   return (
     <div className="voting-details-container">
       <div className="details-title">
@@ -1136,107 +1097,80 @@ const VotingDetailsTable = ({
           className={`toggle-details-btn ${showDetails ? "expanded" : ""}`}
           onClick={() => setShowDetails(!showDetails)}
         >
-          {showDetails ? "Ocultar detalhes" : "Mostrar detalhes"}
-          <FaChevronDown className={`icon ${showDetails ? "expanded" : ""}`} />
+          {showDetails ? (
+            <>
+              <span>Ocultar detalhes</span>
+              <FaChevronUp />
+            </>
+          ) : (
+            <>
+              <span>Mostrar detalhes</span>
+              <FaChevronDown />
+            </>
+          )}
         </button>
       </div>
 
       {showDetails && (
         <div className="voting-details-data">
-          {voting.anonymous === true ? (
-            <div className="anonymous-voting-notice">
-              <p>
-                Esta é uma votação anônima. Os detalhes dos votantes não são
-                exibidos para preservar o anonimato.
-              </p>
-
-              {/* Exibir apenas resultados totais, sem identificação dos votantes */}
-              <div className="voting-results-summary">
-                <h4>Resultados da votação</h4>
-                <table className="results-summary-table">
+          {Object.entries(votesByOption).map(([option, voters]) => (
+            <div key={option} className="option-section">
+              <div className={`option-header ${getOptionClass(option)}`}>
+                <span className="option-label">{option}</span>
+                <span className="vote-count">
+                  {voters.length} voto{voters.length !== 1 ? "s" : ""}
+                </span>
+              </div>
+              {voters.length > 0 ? (
+                <table className="voters-table">
                   <thead>
                     <tr>
-                      <th>Opção</th>
-                      <th>Votos</th>
-                      <th>Percentual</th>
+                      <th>Nome</th>
+                      <th>Email</th>
+                      <th>Data e hora</th>
+                      {/* Mostrar coluna de opção apenas para votações padrão */}
+                      {isStandard && <th>Opção</th>}
                     </tr>
                   </thead>
                   <tbody>
-                    {Object.entries(voting.options || {}).map(
-                      ([option, value]) => {
-                        const voteCount =
-                          value && typeof value.count === "number"
-                            ? value.count
-                            : 0;
-                        const label = value && value.text ? value.text : option;
-                        const total = calculateVotingStats(voting).total;
-                        const percentage =
-                          total > 0 ? Math.round((voteCount / total) * 100) : 0;
-
-                        return (
-                          <tr key={option}>
-                            <td>{label}</td>
-                            <td>{voteCount}</td>
-                            <td>{percentage}%</td>
-                          </tr>
-                        );
-                      }
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          ) : (
-            Object.entries(votesByOption).map(([option, voters]) => (
-              <div key={option} className="option-section">
-                <div className={`option-header ${getOptionClass(option)}`}>
-                  <span className="option-label">{option}</span>
-                  <span className="vote-count">
-                    {voters.length} voto{voters.length !== 1 ? "s" : ""}
-                  </span>
-                </div>
-                {voters.length > 0 ? (
-                  <table className="voters-table">
-                    <thead>
-                      <tr>
-                        <th>Nome</th>
-                        <th>Email</th>
-                        <th>Data e hora</th>
-                        <th>Opção</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {voters.map((voter) => (
-                        <tr key={voter.id} className="voter-row">
-                          <td>
-                            <div className="voter-info">
-                              <div className="voter-avatar">
-                                {getInitials(voter.name)}
-                              </div>
-                              <span className="voter-name">{voter.name}</span>
+                    {voters.map((voter) => (
+                      <tr key={voter.id} className="voter-row">
+                        <td data-label="Nome">
+                          <div className="voter-info">
+                            <div className="voter-avatar">
+                              {getInitials(voter.name)}
                             </div>
-                          </td>
-                          <td className="voter-email">{voter.email}</td>
-                          <td className="voter-time">
+                            <span className="voter-name">{voter.name}</span>
+                          </div>
+                        </td>
+                        <td data-label="Email">{voter.email}</td>
+                        <td data-label="Data/Hora">
+                          <div className="voter-time">
+                            <FaClock
+                              style={{ marginRight: "5px", fontSize: "0.8rem" }}
+                            />
                             {formatDate(voter.timestamp)}
-                          </td>
-                          <td>
+                          </div>
+                        </td>
+                        {/* Mostrar tipo de voto apenas para votações padrão */}
+                        {isStandard && (
+                          <td data-label="Opção">
                             <span
                               className={`vote-type ${getOptionClass(option)}`}
                             >
                               {option}
                             </span>
                           </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                ) : (
-                  <div className="no-voters">Nenhum voto para esta opção</div>
-                )}
-              </div>
-            ))
-          )}
+                        )}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <div className="no-voters">Nenhum voto para esta opção</div>
+              )}
+            </div>
+          ))}
         </div>
       )}
     </div>

@@ -44,21 +44,15 @@ function VotingItem({
 
   // Função para formatar segundos em mm:ss
   const formatTime = (seconds) => {
-    const m = Math.floor(seconds / 60)
-      .toString()
-      .padStart(2, "0");
+    const m = Math.floor(seconds / 60).toString().padStart(2, "0");
     const s = (seconds % 60).toString().padStart(2, "0");
     return `${m}:${s}`;
   };
 
   const navigate = useNavigate();
   // Para single: string, para multi: array
-  const [tempSelectedOption, setTempSelectedOption] = useState(
-    votingType === "multi" ? [] : null
-  );
-  const [selectedOption, setSelectedOption] = useState(
-    votingType === "multi" ? [] : null
-  );
+  const [tempSelectedOption, setTempSelectedOption] = useState(votingType === "multi" ? [] : null);
+  const [selectedOption, setSelectedOption] = useState(votingType === "multi" ? [] : null);
   // Extrair lista de chaves
   const optionKeys = Object.keys(options);
   const [voted, setVoted] = useState(false);
@@ -97,18 +91,6 @@ function VotingItem({
     navigate(`/reports?meetingId=${meetingId}&votingId=${id}`);
   };
 
-  // Cálculo do total de votos considerando votações anônimas
-  let voteCount = 0;
-  if (isAnonymous && options) {
-    // Somar os contadores para votações anônimas
-    Object.values(options).forEach((value) => {
-      voteCount += value && typeof value.count === "number" ? value.count : 0;
-    });
-  } else {
-    // Usar o totalVotes recebido por prop para votações não-anônimas
-    voteCount = totalVotes;
-  }
-
   return (
     <div className="voting-container">
       <div className="voting-header">
@@ -140,55 +122,37 @@ function VotingItem({
         <div className="voting-options">
           {votingType === "multi"
             ? optionKeys.map((key) => (
-                <label
-                  key={key}
-                  className={`vote-checkbox-label ${
-                    tempSelectedOption.includes(key) ? "temp-selected" : ""
-                  } ${
-                    selectedOption && selectedOption.includes(key)
-                      ? "selected"
-                      : ""
-                  }`}
-                >
-                  <input
-                    type="checkbox"
-                    checked={tempSelectedOption.includes(key)}
-                    onChange={() => handleSelectOption(key)}
-                    disabled={voted}
-                  />{" "}
-                  {options[key]?.text || key}
-                </label>
-              ))
-            : optionKeys.map((key) => (
-                <button
-                  key={key}
-                  className={`vote-option-btn ${
-                    tempSelectedOption === key ? "temp-selected" : ""
-                  } ${selectedOption === key ? "selected" : ""}`}
-                  onClick={() => handleSelectOption(key)}
+              <label key={key} className={`vote-checkbox-label ${tempSelectedOption.includes(key) ? "temp-selected" : ""} ${selectedOption && selectedOption.includes(key) ? "selected" : ""}`}>
+                <input
+                  type="checkbox"
+                  checked={tempSelectedOption.includes(key)}
+                  onChange={() => handleSelectOption(key)}
                   disabled={voted}
-                >
-                  {options[key]?.text || key}
-                </button>
-              ))}
-
-          {((votingType === "multi" && tempSelectedOption.length > 0) ||
-            (votingType !== "multi" && tempSelectedOption)) &&
-            !voted && (
-              <button className="confirm-vote-btn" onClick={handleConfirmVote}>
-                <FaCheck /> Confirmar Voto
+                />{' '}
+                {options[key]?.text || key}
+              </label>
+            ))
+            : optionKeys.map((key) => (
+              <button
+                key={key}
+                className={`vote-option-btn ${tempSelectedOption === key ? "temp-selected" : ""} ${selectedOption === key ? "selected" : ""}`}
+                onClick={() => handleSelectOption(key)}
+                disabled={voted}
+              >
+                {options[key]?.text || key}
               </button>
-            )}
+            ))}
+
+          {((votingType === "multi" && tempSelectedOption.length > 0) || (votingType !== "multi" && tempSelectedOption)) && !voted && (
+            <button className="confirm-vote-btn" onClick={handleConfirmVote}>
+              <FaCheck /> Confirmar Voto
+            </button>
+          )}
         </div>
       </div>
 
       <div className="voting-footer">
         <div className="total-votes">
-<<<<<<< HEAD
-          <FaVoteYea className="vote-count-icon" />
-          Total: {voteCount} votos
-=======
->>>>>>> votacao-anonima
         </div>
 
         <div className="action-buttons">
