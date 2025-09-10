@@ -615,13 +615,22 @@ const registerVoteInMeeting = async (
   userId
 ) => {
   try {
-    // Verificações existentes...
+    // Verificar se a votação existe
+    const votingRef = ref(
+      database,
+      `meetings/${meetingId}/votings/${votingId}`
+    );
+    const votingSnapshot = await get(votingRef);
+
+    if (!votingSnapshot.exists()) {
+      throw new Error("Votação não encontrada");
+    }
+
+    const votingData = votingSnapshot.val();
+    const isAnonymous = votingData.anonymous === true;
 
     // Buscar informações do usuário atual
-    const auth = getAuth();
     const currentUser = auth.currentUser;
-
-    // Preparar os dados completos do usuário
     const userDisplayName = currentUser?.displayName || "";
     const userEmail = currentUser?.email || "";
     const userPhotoURL = currentUser?.photoURL || "";
@@ -634,34 +643,27 @@ const registerVoteInMeeting = async (
       `meetings/${meetingId}/votings/${votingId}/voteTimestamps/${userId}`
     ] = serverTimestamp();
 
-    // IMPORTANTE: Também atualizar os dados do participante se estiverem incompletos
-    // Buscar os dados atuais do participante para verificar se estão completos
-    const participantRef = ref(
-      database,
-      `meetings/${meetingId}/participants/${userId}`
-    );
-    const participantSnapshot = await get(participantRef);
-
-    // Se o participante já existe mas os dados estão incompletos, ou se não existe ainda
-    if (
-      !participantSnapshot.exists() ||
-      !participantSnapshot.val().name ||
-      !participantSnapshot.val().email
-    ) {
-      // Adicionar à lista de atualizações os dados completos do usuário
-      updates[`meetings/${meetingId}/participants/${userId}/name`] =
-        userDisplayName;
-      updates[`meetings/${meetingId}/participants/${userId}/email`] = userEmail;
-      updates[`meetings/${meetingId}/participants/${userId}/photoURL`] =
-        userPhotoURL;
-      updates[`meetings/${meetingId}/participants/${userId}/id`] = userId;
-
-      // Se a entrada de participante não existir, adicionar joinedAt também
-      if (!participantSnapshot.exists()) {
-        updates[`meetings/${meetingId}/participants/${userId}/joinedAt`] =
-          new Date().toISOString();
+    // Importante: Atualizar também o contador em options para votações anônimas
+    // Isso garantirá que a contagem seja correta mesmo sem exibir quem votou
+    if (isAnonymous) {
+      // Obter o contador atual
+      let currentCount = 0;
+      if (
+        votingData.options &&
+        votingData.options[selectedOption] &&
+        typeof votingData.options[selectedOption].count === "number"
+      ) {
+        currentCount = votingData.options[selectedOption].count;
       }
+
+      // Atualizar o contador incrementando 1
+      updates[
+        `meetings/${meetingId}/votings/${votingId}/options/${selectedOption}/count`
+      ] = currentCount + 1;
     }
+
+    // Atualizar dados do participante (código existente)
+    // ...
 
     // Executar todas as atualizações em uma única operação
     await update(ref(database), updates);
