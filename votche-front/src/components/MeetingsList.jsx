@@ -200,7 +200,7 @@ function MeetingsList({
 
       {user && (
         <div className="tabs-navigation">
-          <div
+          <button
             className={`tab-item ${activeTab === "created" ? "active" : ""}`}
             onClick={() => setActiveTab("created")}
             role="button"
@@ -208,25 +208,18 @@ function MeetingsList({
             tabIndex={0}
           >
             Minhas Reuniões
-<<<<<<< HEAD
-          </div>
-          <div
+          </button>
+          <button
             className={`tab-item ${
               activeTab === "participating" ? "active" : ""
             }`}
-=======
-          </button>
-          <button
-            className={`tab-btn ${activeTab === "participating" ? "active" : ""
-              }`}
->>>>>>> e6336a927e1390e999a3ec70a355a918eff4c71a
             onClick={() => setActiveTab("participating")}
             role="button"
             aria-selected={activeTab === "participating"}
             tabIndex={0}
           >
             Participando
-          </div>
+          </button>
         </div>
       )}
 
@@ -240,10 +233,6 @@ function MeetingsList({
           {user && activeTab === "created" && meetings.created.length === 0 && (
             <div className="empty-state">
               <p>Você ainda não criou nenhuma reunião</p>
-<<<<<<< HEAD
-=======
-
->>>>>>> e6336a927e1390e999a3ec70a355a918eff4c71a
             </div>
           )}
 
@@ -266,8 +255,8 @@ function MeetingsList({
                 .sort((a, b) => {
                   // Garante que createdAt seja sempre timestamp numérico
                   const getTime = (m) => {
-                    if (typeof m.createdAt === 'number') return m.createdAt;
-                    if (typeof m.createdAt === 'string') {
+                    if (typeof m.createdAt === "number") return m.createdAt;
+                    if (typeof m.createdAt === "string") {
                       const d = new Date(m.createdAt);
                       if (!isNaN(d.getTime())) return d.getTime();
                     }
@@ -294,12 +283,13 @@ function MeetingsList({
                   return (
                     <div
                       key={meeting.id}
-                      className={`meeting-card ${!meeting.active
-                        ? "inactive"
-                        : meeting.active
+                      className={`meeting-card ${
+                        !meeting.active
+                          ? "inactive"
+                          : meeting.active
                           ? "active"
                           : ""
-                        } ${viewingArchived ? "archived" : ""}`}
+                      } ${viewingArchived ? "archived" : ""}`}
                       onClick={() => onSelectMeeting(meeting)}
                     >
                       {isOwner && (
@@ -382,22 +372,15 @@ function MeetingsList({
 
                 return (
                   <div
-<<<<<<< HEAD
+                    key={meeting.id}
                     className={`meeting-card ${
-                      !meeting.active ? "meeting-ended" : ""
-                    }`}
-                    key={meeting.id}
-                    onClick={() => handleSelectMeeting(meeting)}
-=======
-                    key={meeting.id}
-                    className={`meeting-card ${!meeting.active
-                      ? "inactive"
-                      : meeting.active
+                      !meeting.active
+                        ? "inactive"
+                        : meeting.active
                         ? "active"
                         : ""
-                      }`}
+                    }`}
                     onClick={() => onSelectMeeting(meeting)}
->>>>>>> e6336a927e1390e999a3ec70a355a918eff4c71a
                   >
                     <div className="meeting-card-content">
                       <h3 className="meeting-name">

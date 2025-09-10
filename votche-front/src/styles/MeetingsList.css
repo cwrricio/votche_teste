@@ -608,60 +608,59 @@
   background-color: #138496;
 }
 
-/* Melhorias nas abas de navegação */
+/* Melhorias nas abas de navegação - removendo linha preta */
 .tabs-navigation {
   display: flex;
-  gap: 0;
   margin-bottom: 1.5rem;
-  border-bottom: 2px solid #e9eef2;
+  border-bottom: none; /* Removendo a borda inferior */
+  background-color: transparent;
 }
 
 .tab-item {
-  padding: 1rem 1.5rem;
-  font-weight: 600;
-  color: var(--text-medium, #6c757d);
-  position: relative;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #555555;
+  background-color: transparent;
+  border: none;
   cursor: pointer;
   transition: all 0.2s ease;
+  position: relative;
+  border-radius: 4px 4px 0 0;
 }
 
-/* Estado Hover - feedback visual quando mouse passa por cima */
 .tab-item:hover {
-  color: var(--primary-color, #1ea34a);
-  background-color: rgba(30, 163, 74, 0.05);
-}
-
-/* Estado Active - feedback visual quando clica */
-.tab-item:active {
-  transform: translateY(1px);
-  color: var(--primary-dark, #0b6b2b);
+  color: #2e7d32;
+  background-color: rgba(46, 125, 50, 0.05);
 }
 
 .tab-item.active {
-  color: var(--primary-color, #1ea34a);
-  font-weight: 700;
+  color: #2e7d32;
+  font-weight: 600;
 }
 
 .tab-item.active::after {
   content: "";
   position: absolute;
-  bottom: -2px;
+  bottom: 0; /* Ajustado de -1px para 0 */
   left: 0;
   width: 100%;
   height: 3px;
-  background-color: var(--primary-color, #1ea34a);
-  border-radius: 3px 3px 0 0;
-  animation: tabActivate 0.3s ease;
+  background-color: #2e7d32;
+  border-radius: 2px 2px 0 0;
 }
 
-/* Animação para seleção de aba */
-@keyframes tabActivate {
-  0% {
-    width: 0;
-    left: 50%;
+/* Ajuste para modo escuro se necessário */
+@media (prefers-color-scheme: dark) {
+  .tabs-navigation {
+    border-bottom: none; /* Garantindo que não há borda no modo escuro também */
   }
-  100% {
-    width: 100%;
-    left: 0;
+
+  .tab-item {
+    color: #cccccc;
+  }
+
+  .tab-item:hover {
+    background-color: rgba(46, 125, 50, 0.1);
   }
 }

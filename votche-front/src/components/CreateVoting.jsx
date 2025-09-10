@@ -45,13 +45,9 @@ function CreateVoting({ user, onComplete }) {
       return;
     }
 
-<<<<<<< HEAD
-    if (duration < 1) {
-      setError("A duração mínima é de 1 minuto");
-=======
+    // Versão combinada das duas verificações
     if (isNaN(duration) || duration < 1) {
-      setError('A duração mínima é de 1 minuto');
->>>>>>> e6336a927e1390e999a3ec70a355a918eff4c71a
+      setError("A duração mínima é de 1 minuto");
       return;
     }
 
@@ -71,9 +67,6 @@ function CreateVoting({ user, onComplete }) {
     }
   };
 
-<<<<<<< HEAD
-
-=======
   return (
     <div className="voting-form-container">
       <h2>Criar Nova Votação</h2>
@@ -134,17 +127,12 @@ function CreateVoting({ user, onComplete }) {
           />
         </div>
 
-        <button
-          type="submit"
-          className="submit-btn"
-          disabled={isCreating}
-        >
-          {isCreating ? 'Criando...' : 'Criar Votação'}
+        <button type="submit" className="submit-btn" disabled={isCreating}>
+          {isCreating ? "Criando..." : "Criar Votação"}
         </button>
       </form>
     </div>
   );
->>>>>>> e6336a927e1390e999a3ec70a355a918eff4c71a
 }
 
 export default CreateVoting;

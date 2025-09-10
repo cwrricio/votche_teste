@@ -547,7 +547,7 @@ const createVotingInMeeting = async (
 
     // Buscar se a reunião é anônima
     let anonymous = false;
-    if (typeof meetingData.isAnonymous !== 'undefined') {
+    if (typeof meetingData.isAnonymous !== "undefined") {
       anonymous = meetingData.isAnonymous === true;
     }
 
@@ -594,14 +594,17 @@ const registerVoteInMeeting = async (meetingId, votingId, option, userId) => {
     const votingData = votingSnapshot.val();
 
     // Verificar se a votação está ativa
-    if (!votingData.active || (votingData.endTime && votingData.endTime < Date.now())) {
+    if (
+      !votingData.active ||
+      (votingData.endTime && votingData.endTime < Date.now())
+    ) {
       throw new Error("Esta votação foi encerrada");
     }
 
     // Buscar se a votação é anônima
     // Preferir o campo da votação, se não existir, cair para o da reunião (retrocompatibilidade)
     let isAnonymous = false;
-    if (typeof votingData.anonymous !== 'undefined') {
+    if (typeof votingData.anonymous !== "undefined") {
       isAnonymous = votingData.anonymous === true;
     } else {
       const meetingRef = ref(database, `meetings/${meetingId}`);
@@ -617,11 +620,13 @@ const registerVoteInMeeting = async (meetingId, votingId, option, userId) => {
 
     // Suporte a múltipla escolha
     const isMulti = votingData.votingType === "multi";
-    const selectedOptions = isMulti && Array.isArray(option) ? option : [option];
+    const selectedOptions =
+      isMulti && Array.isArray(option) ? option : [option];
 
     // Normalizar e validar opções
-    const normalizedOptions = selectedOptions.map(opt =>
-      opt.trim().charAt(0).toUpperCase() + opt.trim().slice(1).toLowerCase()
+    const normalizedOptions = selectedOptions.map(
+      (opt) =>
+        opt.trim().charAt(0).toUpperCase() + opt.trim().slice(1).toLowerCase()
     );
 
     // Atualizar contagem de votos para cada opção
@@ -662,10 +667,10 @@ const registerVoteInMeeting = async (meetingId, votingId, option, userId) => {
       let text = originalOption;
       if (optionSnapshot.exists()) {
         const val = optionSnapshot.val();
-        if (typeof val === 'object' && val.count !== undefined) {
+        if (typeof val === "object" && val.count !== undefined) {
           currentVotes = val.count;
           text = val.text || originalOption;
-        } else if (typeof val === 'number') {
+        } else if (typeof val === "number") {
           currentVotes = val;
         }
       }
@@ -675,7 +680,9 @@ const registerVoteInMeeting = async (meetingId, votingId, option, userId) => {
     // Se NÃO for anônima, registrar voto e timestamp do usuário
     if (!isAnonymous) {
       updates[`voters/${userId}`] = true;
-      updates[`votes/${userId}`] = isMulti ? normalizedOptions : normalizedOptions[0];
+      updates[`votes/${userId}`] = isMulti
+        ? normalizedOptions
+        : normalizedOptions[0];
       updates[`voteTimestamps/${userId}`] = Date.now();
     }
 
@@ -825,15 +832,47 @@ const registerMinervaVote = async (
       );
     }
 
+    // MODIFICAÇÃO: Calcular empate diretamente a partir das contagens de votos
+    const options = votingData.options || {};
+    let maxVotes = 0;
+    let winners = [];
+
+    // Encontrar o maior número de votos
+    Object.entries(options).forEach(([option, value]) => {
+      const count = value && typeof value.count === "number" ? value.count : 0;
+      if (count > maxVotes) {
+        maxVotes = count;
+      }
+    });
+
+    // Encontrar todas as opções com esse número máximo de votos
+    Object.entries(options).forEach(([option, value]) => {
+      const count = value && typeof value.count === "number" ? value.count : 0;
+      if (count === maxVotes && count > 0) {
+        winners.push(option);
+      }
+    });
+
+    // Determinar se há empate (mais de uma opção com o número máximo de votos)
+    const isTie = winners.length > 1;
+
+    console.log("Verificação de empate:", {
+      options,
+      maxVotes,
+      winners,
+      isTie,
+      selectedOption,
+    });
+
     // Verificar se há empate
-    if (!votingData.isTie) {
+    if (!isTie) {
       throw new Error(
         "O voto de minerva só pode ser aplicado em caso de empate"
       );
     }
 
     // Verificar se a opção escolhida é uma das opções empatadas
-    if (!votingData.winners || !votingData.winners.includes(selectedOption)) {
+    if (!winners.includes(selectedOption)) {
       throw new Error(
         "O voto de minerva deve escolher uma das opções empatadas"
       );
@@ -846,6 +885,9 @@ const registerMinervaVote = async (
       minervaVotedAt: Date.now(),
       minervaOption: selectedOption,
       officialResult: selectedOption, // Definir o resultado oficial
+      // Também atualizamos estes campos para garantir consistência
+      winners: winners,
+      isTie: false, // Após aplicar o voto de minerva, não há mais empate
     };
 
     await update(votingRef, updates);
