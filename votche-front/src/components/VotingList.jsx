@@ -57,6 +57,7 @@ const VotingList = ({
             const votingOptions = voting.options
               ? Object.keys(voting.options)
               : [];
+            const votingType = voting.votingType || "single";
 
             return (
               <VotingItem
@@ -72,6 +73,7 @@ const VotingList = ({
                 onVote={(option) => handleVote(voting.id, option)}
                 isOwner={isOwner}
                 options={votingOptions}
+                votingType={votingType}
               />
             );
           })}

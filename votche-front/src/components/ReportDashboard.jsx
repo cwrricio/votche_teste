@@ -266,13 +266,36 @@ const ReportDashboard = ({ user }) => {
     let winner = null;
     let maxVotes = 0;
 
-    // Processar opções da votação
+    // Novo: contar votos considerando múltipla escolha
+    const optionCounts = {};
     if (voting.options && typeof voting.options === "object") {
-      Object.entries(voting.options).forEach(([option, votes]) => {
-        const voteCount = votes || 0;
+      Object.keys(voting.options).forEach((option) => {
+        optionCounts[option] = 0;
+      });
+    }
+    if (voting.votes && typeof voting.votes === "object") {
+      Object.values(voting.votes).forEach((vote) => {
+        if (Array.isArray(vote)) {
+          // Votação múltipla
+          vote.forEach((opt) => {
+            if (optionCounts.hasOwnProperty(opt)) {
+              optionCounts[opt] += 1;
+            }
+          });
+        } else {
+          // Votação simples
+          if (optionCounts.hasOwnProperty(vote)) {
+            optionCounts[vote] += 1;
+          }
+        }
+      });
+    }
+    // Preencher array de opções para exibição
+    if (voting.options && typeof voting.options === "object") {
+      Object.keys(voting.options).forEach((option) => {
+        const voteCount = optionCounts[option] || 0;
         totalVotes += voteCount;
         options.push({ label: option, votes: voteCount });
-
         if (voteCount > maxVotes) {
           maxVotes = voteCount;
           winner = option;
@@ -802,12 +825,12 @@ const ReportDashboard = ({ user }) => {
               const timestamp = voting.voteTimestamps?.[userId] || null;
               const formattedDate = timestamp
                 ? new Date(timestamp).toLocaleDateString("pt-BR", {
-                    day: "2-digit",
-                    month: "2-digit",
-                    year: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })
+                  day: "2-digit",
+                  month: "2-digit",
+                  year: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })
                 : "Data não disponível";
 
               votesByOption[option].push({
@@ -961,9 +984,8 @@ const ReportDashboard = ({ user }) => {
                     return (
                       <div
                         key={meeting.id}
-                        className={`meeting-report-card ${
-                          isExpanded ? "expanded" : ""
-                        }`}
+                        className={`meeting-report-card ${isExpanded ? "expanded" : ""
+                          }`}
                       >
                         <div
                           className="meeting-card-header"
@@ -1066,9 +1088,8 @@ const ReportDashboard = ({ user }) => {
                                     <div
                                       key={voting.id}
                                       id={`voting-${voting.id}`}
-                                      className={`voting-report-item ${
-                                        isHighlighted ? "highlight-voting" : ""
-                                      }`}
+                                      className={`voting-report-item ${isHighlighted ? "highlight-voting" : ""
+                                        }`}
                                     >
                                       <div className="voting-header">
                                         <h4>
@@ -1076,9 +1097,8 @@ const ReportDashboard = ({ user }) => {
                                         </h4>
                                         <div className="voting-meta">
                                           <span
-                                            className={`voting-status ${
-                                              voting.active ? "active" : "ended"
-                                            }`}
+                                            className={`voting-status ${voting.active ? "active" : "ended"
+                                              }`}
                                           >
                                             {voting.active
                                               ? "Ativa"
@@ -1112,10 +1132,10 @@ const ReportDashboard = ({ user }) => {
                                                   const percentage =
                                                     stats.total > 0
                                                       ? Math.round(
-                                                          (option.votes /
-                                                            stats.total) *
-                                                            100
-                                                        )
+                                                        (option.votes /
+                                                          stats.total) *
+                                                        100
+                                                      )
                                                       : 0;
 
                                                   return (
@@ -1123,7 +1143,7 @@ const ReportDashboard = ({ user }) => {
                                                       key={idx}
                                                       className={
                                                         option.label ===
-                                                        stats.winner
+                                                          stats.winner
                                                           ? "winner"
                                                           : ""
                                                       }

@@ -93,7 +93,12 @@ function MeetingSession({ user, onBack }) {
   // Função para registrar um voto
   const handleVote = async (votingId, option) => {
     try {
-      await registerVoteInMeeting(meetingId, votingId, option, user.uid);
+      // Buscar o tipo da votação
+      const voting = votings.find((v) => v.id === votingId);
+      const isMulti = voting && voting.votingType === "multi";
+      // Se multi, garantir array
+      const toSend = isMulti ? option : option;
+      await registerVoteInMeeting(meetingId, votingId, toSend, user.uid);
     } catch (error) {
       setError(error.message || "Erro ao registrar voto");
     }
@@ -147,8 +152,9 @@ function MeetingSession({ user, onBack }) {
         meetingId,
         formData.title.trim(),
         Object.keys(formData.options),
-        Number(formData.duration), // Usar a duração escolhida pelo usuário
-        user.uid
+        Number(formData.duration),
+        user.uid,
+        formData.votingType || "single"
       );
 
       // Resetar formulário

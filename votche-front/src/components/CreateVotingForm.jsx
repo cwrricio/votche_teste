@@ -6,6 +6,7 @@ const CreateVotingForm = ({ onSubmit, onCancel }) => {
   const [title, setTitle] = useState("");
   const [options, setOptions] = useState(["", ""]);
   const [duration, setDuration] = useState(5); // duração em minutos
+  const [votingType, setVotingType] = useState("single"); // single = única, multi = múltipla
 
   const handleAddOption = () => {
     setOptions([...options, ""]);
@@ -45,17 +46,25 @@ const CreateVotingForm = ({ onSubmit, onCancel }) => {
       return;
     }
 
-    // Transformar array em objeto de opções
+    // Salvar as opções como objeto { chaveSanitizada: textoOriginal }
+    // Sanitiza apenas para a chave, mas mantém o texto original para exibição
+    // Firebase proíbe: . # $ / [ ]
+    const sanitizeKey = (str) =>
+      str.replace(/[.#$/\[\]]/g, "_").trim(); // Remover escapes desnecessários
     const optionsObj = {};
     filteredOptions.forEach((opt) => {
-      optionsObj[opt] = 0;
+      const key = sanitizeKey(opt);
+      if (key.length > 0) {
+        optionsObj[key] = opt; // salva o texto original como valor
+      }
     });
 
-    // Enviar dados com duração
+    // Enviar dados com duração e tipo
     onSubmit({
       title,
       options: optionsObj,
       duration: Number(duration),
+      votingType,
       active: true,
       createdAt: new Date().toISOString(),
     });
@@ -72,6 +81,31 @@ const CreateVotingForm = ({ onSubmit, onCancel }) => {
       </div>
 
       <form onSubmit={handleSubmit} className="create-voting-form">
+        <div className="form-group">
+          <label>Tipo de Votação</label>
+          <div style={{ display: "flex", gap: "1rem", marginBottom: 8 }}>
+            <label>
+              <input
+                type="radio"
+                name="votingType"
+                value="single"
+                checked={votingType === "single"}
+                onChange={() => setVotingType("single")}
+              />
+              Escolha única
+            </label>
+            <label>
+              <input
+                type="radio"
+                name="votingType"
+                value="multi"
+                checked={votingType === "multi"}
+                onChange={() => setVotingType("multi")}
+              />
+              Múltipla escolha
+            </label>
+          </div>
+        </div>
         <div className="form-group">
           <label htmlFor="voting-duration">Duração da Votação (minutos)</label>
           <input

@@ -455,7 +455,8 @@ const createVotingInMeeting = async (
   title,
   options,
   durationMinutes,
-  createdBy
+  createdBy,
+  votingType = "single"
 ) => {
   try {
     // Verificar se a reunião existe e está ativa
@@ -502,6 +503,7 @@ const createVotingInMeeting = async (
       createdAt: Date.now(),
       endTime,
       active: true,
+      votingType,
     });
 
     return {
@@ -517,11 +519,6 @@ const createVotingInMeeting = async (
 // Função para registrar voto em uma votação de uma reunião
 const registerVoteInMeeting = async (meetingId, votingId, option, userId) => {
   try {
-    // Normalizar a opção para garantir consistência
-    const normalizedOption =
-      option.trim().charAt(0).toUpperCase() +
-      option.trim().slice(1).toLowerCase();
-
     // Verificar se a votação existe
     const votingRef = ref(
       database,
@@ -545,51 +542,56 @@ const registerVoteInMeeting = async (meetingId, votingId, option, userId) => {
       throw new Error("Você já votou nesta votação");
     }
 
-    // Verificar se a opção normalizada existe nas opções disponíveis
-    let originalOption = normalizedOption;
-    let optionExists = false;
+    // Suporte a múltipla escolha
+    const isMulti = votingData.votingType === "multi";
+    const selectedOptions = isMulti && Array.isArray(option) ? option : [option];
 
-    if (votingData.options) {
-      // Comparar com opções normalizadas
-      for (const opt of Object.keys(votingData.options)) {
-        const normalizedOpt =
-          opt.trim().charAt(0).toUpperCase() +
-          opt.trim().slice(1).toLowerCase();
-        if (normalizedOpt === normalizedOption) {
-          originalOption = opt; // Usar a opção original do banco
-          optionExists = true;
-          break;
+    // Normalizar e validar opções
+    const normalizedOptions = selectedOptions.map(opt =>
+      opt.trim().charAt(0).toUpperCase() + opt.trim().slice(1).toLowerCase()
+    );
+
+    // Atualizar contagem de votos para cada opção
+    const updates = {};
+    for (const normalizedOption of normalizedOptions) {
+      // Verificar se a opção existe
+      let originalOption = normalizedOption;
+      let optionExists = false;
+      if (votingData.options) {
+        for (const opt of Object.keys(votingData.options)) {
+          const normalizedOpt =
+            opt.trim().charAt(0).toUpperCase() +
+            opt.trim().slice(1).toLowerCase();
+          if (normalizedOpt === normalizedOption) {
+            originalOption = opt;
+            optionExists = true;
+            break;
+          }
         }
       }
-    }
-
-    if (!optionExists) {
-      // Se a opção não existir, vamos criá-la
-      console.log(`Criando nova opção de voto: ${normalizedOption}`);
-      originalOption = normalizedOption;
-
-      const optionsRef = ref(
+      if (!optionExists) {
+        // Se a opção não existir, criar
+        const optionsRef = ref(
+          database,
+          `meetings/${meetingId}/votings/${votingId}/options`
+        );
+        await update(optionsRef, {
+          [normalizedOption]: 0,
+        });
+      }
+      // Incrementar contagem
+      const optionRef = ref(
         database,
-        `meetings/${meetingId}/votings/${votingId}/options`
+        `meetings/${meetingId}/votings/${votingId}/options/${originalOption}`
       );
-      await update(optionsRef, {
-        [normalizedOption]: 0,
-      });
+      const optionSnapshot = await get(optionRef);
+      const currentVotes = optionSnapshot.exists() ? optionSnapshot.val() : 0;
+      updates[`options/${originalOption}`] = currentVotes + 1;
     }
-
-    // Incrementar contagem da opção
-    const optionRef = ref(
-      database,
-      `meetings/${meetingId}/votings/${votingId}/options/${originalOption}`
-    );
-    const optionSnapshot = await get(optionRef);
-    const currentVotes = optionSnapshot.exists() ? optionSnapshot.val() : 0;
 
     // Registrar voto e timestamp
-    const updates = {};
-    updates[`options/${originalOption}`] = currentVotes + 1;
     updates[`voters/${userId}`] = true;
-    updates[`votes/${userId}`] = originalOption;
+    updates[`votes/${userId}`] = isMulti ? normalizedOptions : normalizedOptions[0];
     updates[`voteTimestamps/${userId}`] = Date.now();
 
     await update(
